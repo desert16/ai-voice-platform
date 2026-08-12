@@ -1,0 +1,22 @@
+{
+  "name": "ai-voice-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/api\" \"npm run dev --workspace=apps/bridge\" \"npm run dev --workspace=apps/asterisk-manager\" \"npm run dev --workspace=apps/web\"",
+    "dev:bridge": "npm run dev --workspace=apps/bridge",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:asterisk": "npm run dev --workspace=apps/asterisk-manager",
+    "db:generate": "npm run generate --workspace=packages/db",
+    "db:migrate": "npm run migrate --workspace=packages/db",
+    "db:studio": "npm run studio --workspace=packages/db"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

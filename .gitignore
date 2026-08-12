@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+dist/
+build/
+.DS_Store
+*.swp
+/apps/web/dist/
+/apps/web/node_modules/
+/apps/api/node_modules/
+/apps/bridge/node_modules/
+/apps/asterisk-manager/node_modules/
+/packages/db/node_modules/

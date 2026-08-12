@@ -1,0 +1,19 @@
+{
+  "name": "@voicecore/asterisk-manager",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "asterisk-manager": "^0.1.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "ioredis": "^5.3.2",
+    "@voicecore/db": "*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
