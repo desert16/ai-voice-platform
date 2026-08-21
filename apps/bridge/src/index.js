@@ -150,9 +150,16 @@ function handleCall(socket, redis, ai) {
     try {
       const samples16 = upsample8to16(bufToInt16(merged));
       const buf16 = int16ToBuf(samples16);
-      geminiSession.sendRealtimeInput({
-        audio: { data: buf16.toString('base64'), mimeType: 'audio/pcm;rate=16000' },
-      });
+      const b64 = buf16.toString('base64');
+
+      if (typeof geminiSession.sendRealtimeInput === 'function') {
+        geminiSession.sendRealtimeInput({
+          mediaChunks: [{
+            data: b64,
+            mimeType: 'audio/pcm;rate=16000'
+          }]
+        });
+      }
     } catch (e) {
       console.error(`[SEND ERROR] ${e.message}`);
     }
@@ -232,10 +239,16 @@ function handleCall(socket, redis, ai) {
       console.error(`[DB ERROR] Call kaydı oluşturulamadı: ${e.message}`);
     }
 
+    const modelToUse = (tenantConfig.voiceModel && !tenantConfig.voiceModel.includes('3.1'))
+      ? tenantConfig.voiceModel
+      : 'models/gemini-2.0-flash-exp';
+
+    console.log(`[GEMINI CONNECTING] Model: ${modelToUse} | Prompt uzunluğu: ${tenantConfig.systemPrompt?.length || 0}`);
+
     // Gemini session'ı tenant config ile aç
     try {
       geminiSession = await ai.live.connect({
-        model: tenantConfig.voiceModel || 'gemini-3.1-flash-live-preview',
+        model: modelToUse,
         config: {
           responseModalities: [Modality.AUDIO],
           systemInstruction: {
@@ -244,15 +257,20 @@ function handleCall(socket, redis, ai) {
         },
         callbacks: {
           onopen: () => {
-            console.log(`[GEMINI] Bağlantı kuruldu ✓ (Tenant: ${tenantId || 'default'})`);
+            console.log(`[GEMINI] Bağlantı kuruldu ✓ (Model: ${modelToUse} | Tenant: ${tenantId || 'default'})`);
             sessionReady = true;
           },
           onmessage: (msg) => {
             try { handleGeminiMessage(msg); }
             catch (e) { console.error(`[MSG ERROR] ${e.message}`); }
           },
-          onerror: (e) => console.error(`[GEMINI ERROR] ${e?.message || e}`),
-          onclose: () => cleanup(),
+          onerror: (e) => {
+            console.error(`[GEMINI ERROR]`, e?.message || e);
+          },
+          onclose: (ev) => {
+            console.warn(`[GEMINI CLOSED]`, ev?.reason || ev || '');
+            cleanup();
+          },
         },
       });
     } catch (err) {
@@ -260,6 +278,7 @@ function handleCall(socket, redis, ai) {
       cleanup();
     }
   }
+
 
   // Veri paketi işleme
   socket.on('data', (chunk) => {
@@ -323,11 +342,12 @@ function handleCall(socket, redis, ai) {
 function getDefaultConfig() {
   return {
     systemPrompt: process.env.DEFAULT_SYSTEM_PROMPT ||
-      'Sen VoiceCore AI\'in sesli asistanısın. Kısa ve nazik cümlelerle yardım et.',
-    voiceModel: 'gemini-3.1-flash-live-preview',
+      'Sen VoiceCore AI sesli asistanısın. Arayan müşterilere kibar, doğal ve kısa Türkçe cümlelerle yardımcı ol.',
+    voiceModel: 'models/gemini-2.0-flash-exp',
     agentId: null,
   };
 }
+
 
 // ──────────────────────────────────────────────
 // ANA SUNUCU BAŞLATMA
