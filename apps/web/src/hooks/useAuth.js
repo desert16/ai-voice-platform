@@ -66,22 +66,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', background: '#0A0A1A', color: '#6C63FF', fontSize: '1.2rem'
-      }}>
-        Yükleniyor...
-      </div>
+    return React.createElement(
+      'div',
+      {
+        style: {
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: '100vh', background: '#0A0A1A', color: '#6C63FF', fontSize: '1.2rem'
+        }
+      },
+      'Yükleniyor...'
     );
   }
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, user, tenant, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  return React.createElement(
+    AuthContext.Provider,
+    { value: { isAuthenticated, user, tenant, login, logout } },
+    children
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+
 
