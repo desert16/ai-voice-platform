@@ -36,16 +36,66 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    await prisma.sipTrunk.delete({
+    const { label, sipUsername, sipPassword, sipHost, sipPort, phoneNumber } = req.body;
+    const existing = await prisma.sipTrunk.findFirst({
       where: { id: req.params.id, tenantId: req.params.tenantId }
     });
-    return success(res, 'Trunk deleted');
+    if (!existing) return error(res, 'Trunk bulunamadı', 404);
+
+    const updatedTrunk = await prisma.sipTrunk.update({
+      where: { id: req.params.id },
+      data: {
+        label: label !== undefined ? label : existing.label,
+        sipUsername: sipUsername !== undefined ? sipUsername : existing.sipUsername,
+        sipPassword: sipPassword !== undefined ? sipPassword : existing.sipPassword,
+        sipHost: sipHost !== undefined ? sipHost : existing.sipHost,
+        sipPort: sipPort !== undefined ? parseInt(sipPort) : existing.sipPort,
+        phoneNumber: phoneNumber !== undefined ? phoneNumber : existing.phoneNumber,
+        status: 'REGISTERING'
+      }
+    });
+
+    // Asterisk santralinde de güncelle
+    try {
+      await asteriskManager.activateTrunk(req.params.tenantId, updatedTrunk);
+    } catch (e) {
+      console.warn('[TRUNK] Asterisk reload warning:', e.message);
+    }
+
+    await redisService.invalidateTenantConfig(req.params.tenantId);
+    return success(res, 'Trunk güncellendi ve santrale yüklendi', updatedTrunk);
   } catch (err) {
-    return error(res, 'Failed to delete trunk', 500, err.message);
+    return error(res, 'Trunk güncelleme hatası', 500, err.message);
   }
 });
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const existing = await prisma.sipTrunk.findFirst({
+      where: { id: req.params.id, tenantId: req.params.tenantId }
+    });
+    if (!existing) return error(res, 'Trunk bulunamadı', 404);
+
+    // Asterisk'ten sil
+    try {
+      await asteriskManager.deactivateTrunk(req.params.tenantId, req.params.id);
+    } catch (e) {
+      console.warn('[TRUNK] Asterisk deactivate warning:', e.message);
+    }
+
+    await prisma.sipTrunk.delete({
+      where: { id: req.params.id }
+    });
+
+    await redisService.invalidateTenantConfig(req.params.tenantId);
+    return success(res, 'Trunk silindi ve santralden kaldırıldı');
+  } catch (err) {
+    return error(res, 'Trunk silme hatası', 500, err.message);
+  }
+});
+
 
 router.post('/:id/activate', async (req, res) => {
   try {
