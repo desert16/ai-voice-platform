@@ -215,12 +215,13 @@ async function main() {
   // AMI bağlantısı
   initAmi();
 
-  // HTTP sunucusu
-  const PORT = parseInt(process.env.MANAGER_PORT || '4001');
-  app.listen(PORT, '127.0.0.1', () => {
-    console.log(`\n[ASTERISK-MANAGER] Port: 127.0.0.1:${PORT}`);
+  // HTTP sunucusu (0.0.0.0 — API sunucusunun erişebilmesi için)
+  const PORT = parseInt(process.env.MANAGER_PORT || process.env.PORT || '4001');
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n[ASTERISK-MANAGER] Port: 0.0.0.0:${PORT}`);
     console.log(`[ASTERISK-MANAGER] Hazır ✓\n`);
   });
+
 }
 
 main().catch((err) => {

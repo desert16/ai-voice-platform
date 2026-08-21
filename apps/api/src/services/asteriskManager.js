@@ -1,42 +1,53 @@
 const axios = require('axios');
 
 class AsteriskManager {
-  constructor() {
-    this.baseURL = process.env.ASTERISK_MANAGER_URL || 'http://127.0.0.1:4001';
-    this.token = process.env.SERVICE_TOKEN || 'voicecore_internal_service_token';
+  getBaseURL() {
+    return process.env.ASTERISK_MANAGER_URL || 'http://192.168.203.136:4001';
+  }
+
+  getToken() {
+    return process.env.SERVICE_TOKEN || 'voicecore_internal_service_token_2024';
   }
 
   async activateTrunk(tenantId, trunkData) {
+    const baseURL = this.getBaseURL();
+    const token = this.getToken();
     try {
+      console.log(`[ASTERISK-MGR] Activating trunk for tenant ${tenantId} via ${baseURL}`);
       const response = await axios.post(
-        `${this.baseURL}/trunks/${tenantId}/activate`,
+        `${baseURL}/trunks/${tenantId}/activate`,
         trunkData,
         {
-          headers: { 'x-service-token': this.token }
+          headers: { 'x-service-token': token },
+          timeout: 10000,
         }
       );
       return response.data;
     } catch (err) {
-      console.error('Asterisk Manager - activateTrunk Error:', err.message);
-      throw new Error('Failed to activate trunk on Asterisk');
+      console.error(`Asterisk Manager - activateTrunk Error (${baseURL}):`, err.message);
+      throw new Error(`Failed to activate trunk on Asterisk (${err.message})`);
     }
   }
 
   async deactivateTrunk(tenantId, trunkId) {
+    const baseURL = this.getBaseURL();
+    const token = this.getToken();
     try {
       const response = await axios.post(
-        `${this.baseURL}/trunks/${tenantId}/deactivate`,
+        `${baseURL}/trunks/${tenantId}/deactivate`,
         { trunkId },
         {
-          headers: { 'x-service-token': this.token }
+          headers: { 'x-service-token': token },
+          timeout: 10000,
         }
       );
       return response.data;
     } catch (err) {
-      console.error('Asterisk Manager - deactivateTrunk Error:', err.message);
-      throw new Error('Failed to deactivate trunk on Asterisk');
+      console.error(`Asterisk Manager - deactivateTrunk Error (${baseURL}):`, err.message);
+      throw new Error(`Failed to deactivate trunk on Asterisk (${err.message})`);
     }
   }
 }
+
 
 module.exports = new AsteriskManager();
