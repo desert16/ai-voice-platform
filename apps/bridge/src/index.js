@@ -128,8 +128,13 @@ async function startBridgeServer() {
       playTimeoutId = setTimeout(scheduleNextPlay, delayMs);
     }
 
+    let sessionInitiated = false;
+
     // Gemini Bağlantısını Başlat
     async function connectGemini(systemPrompt = DEFAULT_SYSTEM_INSTRUCTION) {
+      if (sessionInitiated || closed) return;
+      sessionInitiated = true;
+
       try {
         geminiSession = await ai.live.connect({
           model: GEMINI_MODEL,
@@ -139,7 +144,7 @@ async function startBridgeServer() {
           },
           callbacks: {
             onopen: () => {
-              console.log(`[GEMINI] WebSocket Bağlantısı Kuruldu ✓ (Model: ${GEMINI_MODEL})`);
+              console.log(`[GEMINI] WebSocket Bağlantısı Kuruldu ✓ (Model: ${GEMINI_MODEL} | Tenant: ${tenantId || 'default'})`);
               sessionReady = true;
             },
             onmessage: (msg) => {
@@ -159,8 +164,12 @@ async function startBridgeServer() {
       }
     }
 
-    // Başlangıçta default ile başlat
-    connectGemini();
+    // 100ms içinde UUID gelmezse default ile başlat (yedek tetikleyici)
+    const initFallbackTimer = setTimeout(() => {
+      if (!sessionInitiated && !closed) {
+        connectGemini(DEFAULT_SYSTEM_INSTRUCTION);
+      }
+    }, 120);
 
     // 100ms Zamanlayıcıyla Gemini'ye Ses Gönder
     const sendTimer = setInterval(() => {
@@ -253,26 +262,26 @@ async function startBridgeServer() {
           callUuid = payload.toString('hex');
           console.log(`[AUDIO SOCKET] UUID: ${callUuid}`);
 
+          let promptToUse = DEFAULT_SYSTEM_INSTRUCTION;
+
           // Redis'ten tenantId ve prompt kontrolü
           if (redis) {
             try {
               tenantId = await redis.get(`tenant:uuid:${callUuid}`);
               if (tenantId) {
                 const config = await getTenantConfig(redis, tenantId);
-                if (config?.systemPrompt && config.systemPrompt !== DEFAULT_SYSTEM_INSTRUCTION) {
-                  console.log(`[TENANT PROMPT] ${tenantId} için özel prompt yüklendi.`);
-                  // Özel prompt ile Gemini'yi yeniden başlat
-                  if (geminiSession) {
-                    try { geminiSession.close(); } catch(_) {}
-                  }
-                  sessionReady = false;
-                  connectGemini(config.systemPrompt);
+                if (config?.systemPrompt) {
+                  promptToUse = config.systemPrompt;
+                  console.log(`[TENANT PROMPT] ${tenantId} için özel prompt yüklendi (${promptToUse.length} karakter).`);
                 }
               }
             } catch (e) {
               console.warn('[REDIS CHECK WARN]', e.message);
             }
           }
+
+          // Gemini oturumunu tenant'ın özel promptu ile aç
+          connectGemini(promptToUse);
 
           if (tenantId) {
             startCall({ tenantId, asteriskUuid: callUuid }).then(id => { callDbId = id; }).catch(() => {});
@@ -284,6 +293,7 @@ async function startBridgeServer() {
         }
       }
     });
+
 
     nextPlayTime = process.hrtime.bigint();
     scheduleNextPlay();
