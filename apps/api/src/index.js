@@ -14,6 +14,8 @@ const customerApiRoutes = require('./routes/customerApis');
 const callRoutes = require('./routes/calls');
 const apiKeyRoutes = require('./routes/apiKeys');
 const publicApiRoutes = require('./routes/publicApi');
+const internalRoutes = require('./routes/internal'); // PBX → API dahili iletişim
+
 
 const app = express();
 
@@ -49,6 +51,10 @@ app.use('/api/tenants/:tenantId/keys', apiKeyRoutes);
 
 // Customer-facing Public API (Requires API Key)
 app.use('/v1', publicApiRoutes);
+
+// Internal API — Sadece PBX sunucusu (x-service-token zorunlu)
+app.use('/api/internal', internalRoutes);
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {

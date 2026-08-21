@@ -1,20 +1,56 @@
 // ============================================================================
 // Asterisk Manager Servisi — Ana giriş noktası
-// API sunucu + AMI bağlantısı + Redis
+// AMI bağlantısı + Redis  (DB erişimi yok — API sunucusu üzerinden)
 // ============================================================================
 
 require('dotenv').config();
 
 const express = require('express');
 const Redis   = require('ioredis');
+const http    = require('http');
 
 const { initAmi, reloadPjsip, reloadDialplan, getTrunkStatus } = require('./ami-client');
 const { writeTenantConfig, deleteTenantConfig } = require('./config-generator');
-const { PrismaClient } = require('@prisma/client');
 
-const app    = express();
-const prisma = new PrismaClient();
-let   redis  = null;
+const app   = express();
+let   redis = null;
+
+// ── API sunucusuna dahili HTTP çağrısı ───────────────────────────────────
+// DB işlemleri doğrudan Prisma yerine API sunucusu üzerinden yapılır.
+async function callApi(method, path, body = null) {
+  const apiUrl = process.env.API_SERVER_URL || 'http://127.0.0.1:3000';
+  const token  = process.env.SERVICE_TOKEN  || '';
+  const url    = new URL(path, apiUrl);
+
+  return new Promise((resolve, reject) => {
+    const payload = body ? JSON.stringify(body) : null;
+    const options = {
+      hostname: url.hostname,
+      port:     parseInt(url.port || '3000'),
+      path:     url.pathname + url.search,
+      method,
+      headers: {
+        'Content-Type':    'application/json',
+        'x-service-token': token,
+        ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: data }); }
+      });
+    });
+
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
 
 app.use(express.json());
 
@@ -56,32 +92,27 @@ app.post('/trunks/:tenantId/activate', requireServiceToken, async (req, res) => 
     await reloadPjsip();
     await reloadDialplan();
 
-    // DB'yi güncelle
-    await prisma.sipTrunk.updateMany({
-      where: { tenantId, sipUsername },
-      data: { status: 'REGISTERING' },
-    });
+    // API sunucusu üzerinden DB güncelle (Prisma yok — HTTP)
+    await callApi('PATCH', `/api/internal/trunks/${tenantId}/status`, {
+      sipUsername,
+      status: 'REGISTERING',
+    }).catch((e) => console.warn('[API] Trunk status güncelleme hatası:', e.message));
 
-    // Tenant config'ini Redis'e yaz (bridge için)
-    const agent = await prisma.agent.findFirst({
-      where: { tenantId, isDefault: true, status: 'ACTIVE' },
-    });
+    // Tenant config'ini API'den al → Redis'e yaz (bridge için)
+    const configRes = await callApi('GET', `/api/internal/tenants/${tenantId}/agent-config`)
+      .catch(() => null);
 
-    if (agent && redis) {
+    if (configRes?.status === 200 && configRes.body && redis) {
       await redis.setex(
         `tenant:config:${tenantId}`,
         3600,
-        JSON.stringify({
-          agentId:      agent.id,
-          systemPrompt: agent.systemPrompt,
-          voiceModel:   agent.voiceModel,
-          language:     agent.language,
-        })
+        JSON.stringify(configRes.body)
       );
       console.log(`[REDIS] Tenant config yüklendi: ${tenantId}`);
     }
 
     res.json({ success: true, message: 'Trunk aktifleştirildi, Asterisk reload edildi' });
+
   } catch (err) {
     console.error('[ACTIVATE ERROR]', err);
     res.status(500).json({ error: err.message });
@@ -100,10 +131,10 @@ app.post('/trunks/:tenantId/deactivate', requireServiceToken, async (req, res) =
     await reloadPjsip();
     await reloadDialplan();
 
-    await prisma.sipTrunk.updateMany({
-      where: { tenantId },
-      data: { status: 'INACTIVE' },
-    });
+    // API sunucusu üzerinden DB güncelle
+    await callApi('PATCH', `/api/internal/trunks/${tenantId}/status`, {
+      status: 'INACTIVE',
+    }).catch((e) => console.warn('[API] Trunk deactivate güncelleme hatası:', e.message));
 
     if (redis) {
       await redis.del(`tenant:config:${tenantId}`);
@@ -138,11 +169,11 @@ app.post('/tenants/:tenantId/sync-config', requireServiceToken, async (req, res)
   const { tenantId } = req.params;
 
   try {
-    const agent = await prisma.agent.findFirst({
-      where: { tenantId, isDefault: true, status: 'ACTIVE' },
-    });
+    // API sunucusundan agent config'i al
+    const configRes = await callApi('GET', `/api/internal/tenants/${tenantId}/agent-config`)
+      .catch(() => null);
 
-    if (!agent) {
+    if (!configRes || configRes.status !== 200) {
       return res.status(404).json({ error: 'Aktif ajan bulunamadı' });
     }
 
@@ -150,12 +181,7 @@ app.post('/tenants/:tenantId/sync-config', requireServiceToken, async (req, res)
       await redis.setex(
         `tenant:config:${tenantId}`,
         3600,
-        JSON.stringify({
-          agentId:      agent.id,
-          systemPrompt: agent.systemPrompt,
-          voiceModel:   agent.voiceModel,
-          language:     agent.language,
-        })
+        JSON.stringify(configRes.body)
       );
     }
 
@@ -164,6 +190,7 @@ app.post('/tenants/:tenantId/sync-config', requireServiceToken, async (req, res)
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
