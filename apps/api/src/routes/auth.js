@@ -1,11 +1,21 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+let bcrypt;
+try {
+  bcrypt = require('bcrypt');
+} catch {
+  try {
+    bcrypt = require('bcryptjs');
+  } catch {
+    bcrypt = null;
+  }
+}
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { success, error } = require('../utils/response');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'voicecore_jwt_super_secret_2024';
 

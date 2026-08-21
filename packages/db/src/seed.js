@@ -1,12 +1,15 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
+
+// Precomputed bcrypt hash for 'admin123' ($2b$10$...) — avoids native compilation errors
+const ADMIN_PASSWORD_HASH = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
 
 async function main() {
   console.log('Seeding initial data...');
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  const passwordHash = ADMIN_PASSWORD_HASH;
+
 
   // 1. Demo Tenant
   const tenant = await prisma.tenant.upsert({
