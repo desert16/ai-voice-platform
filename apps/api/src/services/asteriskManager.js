@@ -12,7 +12,7 @@ class AsteriskManager {
         `${this.baseURL}/trunks/${tenantId}/activate`,
         trunkData,
         {
-          headers: { 'SERVICE_TOKEN': this.token }
+          headers: { 'x-service-token': this.token }
         }
       );
       return response.data;
@@ -28,7 +28,7 @@ class AsteriskManager {
         `${this.baseURL}/trunks/${tenantId}/deactivate`,
         { trunkId },
         {
-          headers: { 'SERVICE_TOKEN': this.token }
+          headers: { 'x-service-token': this.token }
         }
       );
       return response.data;

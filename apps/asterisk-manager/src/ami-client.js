@@ -41,11 +41,17 @@ function createAmiClient() {
 }
 
 async function handleVoicecoreCallEvent(event) {
-  // event örn: { tenantid: 'clxxx', uuid: 'abc123...', callerid: '905XXXXXXXXX' }
+  // event örn: { tenantid: 'clxxx', uuid: 'abc123-...', callerid: '905XXXXXXXXX' }
   const tenantId = event.tenantid;
-  const uuid     = event.uuid;
+  const rawUuid  = event.uuid;
 
-  if (!tenantId || !uuid) return;
+  if (!tenantId || !rawUuid) return;
+
+  // AudioSocket, UUID'yi Asterisk'e binary (16 byte) olarak yollar; bridge tarafı
+  // bunu payload.toString('hex') ile tiresiz/küçük harf 32 karaktere çeviriyor.
+  // Redis key'inin bridge'in aradığı formatla birebir eşleşmesi için burada da
+  // aynı normalizasyonu yapıyoruz (tireleri at, küçük harfe çevir).
+  const uuid = rawUuid.replace(/-/g, '').toLowerCase();
 
   try {
     const { getRedisClient } = require('./index');

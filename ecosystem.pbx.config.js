@@ -6,8 +6,8 @@ module.exports = {
   apps: [
     {
       name:         'vc-bridge',
-      script:       './apps/bridge/src/index.js',
-      cwd:          '/opt/voicecore',
+      script:       'src/index.js',
+      cwd:          '/opt/voicecore/apps/bridge',
       instances:    1,
       exec_mode:    'fork',
       autorestart:  true,
@@ -26,8 +26,8 @@ module.exports = {
     },
     {
       name:         'vc-asterisk-manager',
-      script:       './apps/asterisk-manager/src/index.js',
-      cwd:          '/opt/voicecore',
+      script:       'src/index.js',
+      cwd:          '/opt/voicecore/apps/asterisk-manager',
       instances:    1,
       exec_mode:    'fork',
       autorestart:  true,

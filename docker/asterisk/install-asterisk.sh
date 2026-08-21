@@ -11,10 +11,10 @@ echo "========================================"
 
 # ── Sistem Güncellemesi ──────────────────────────────────────
 apt-get update && apt-get upgrade -y
-apt-get install -y curl wget gnupg2 software-properties-common \
-    build-essential libssl-dev libxml2-dev libncurses5-dev \
+apt-get install -y curl wget gnupg2 \
+    build-essential libssl-dev libxml2-dev libncurses-dev \
     libnewt-dev libsqlite3-dev libjansson-dev libedit-dev \
-    uuid-dev libxslt1-dev nodejs npm git
+    uuid-dev libxslt1-dev git
 
 # ── Asterisk 22 İndir ve Derle ───────────────────────────────
 cd /usr/src
@@ -43,6 +43,11 @@ menuselect/menuselect \
 
 make -j$(nproc)
 make install
+# "make samples" olmadan asterisk.conf/logger.conf/modules.conf/stasis.conf
+# gibi çekirdek config dosyaları hiç kurulmaz ve Asterisk "Module
+# initialization failed" ile açılışta çöker. Kendi pjsip/extensions/manager
+# config'lerimizi bundan SONRA üzerine kopyalıyoruz.
+make samples
 make config
 make install-logrotate
 
@@ -59,12 +64,24 @@ cp "$SCRIPT_DIR/pjsip.conf"      /etc/asterisk/pjsip.conf
 cp "$SCRIPT_DIR/extensions.conf" /etc/asterisk/extensions.conf
 cp "$SCRIPT_DIR/manager.conf"    /etc/asterisk/manager.conf
 
-# pjsip.d klasörünü içerecek placeholder
-touch /etc/asterisk/pjsip.d/.gitkeep
-touch /etc/asterisk/extensions.d/.gitkeep
+# pjsip.d / extensions.d klasörlerini içerecek placeholder — GERÇEK .conf
+# uzantılı olmalı. Sadece .gitkeep bırakılırsa "#include pjsip.d/*.conf" ve
+# "#include extensions.d/*.conf" boş dizinde hiçbir dosyaya eşleşmez ve
+# Asterisk res_pjsip/pbx_config modüllerini "declined to load" yaparak
+# TÜM pjsip/dialplan config'ini reddeder.
+cat > /etc/asterisk/pjsip.d/00-placeholder.conf << 'PJPLACEHOLDER'
+; Tenant aktivasyonlarında buraya tenant_<id>.conf dosyaları eklenir.
+PJPLACEHOLDER
+
+cat > /etc/asterisk/extensions.d/00-placeholder.conf << 'EXTPLACEHOLDER'
+; Tenant aktivasyonlarında buraya tenant_<id>.conf dosyaları eklenir.
+EXTPLACEHOLDER
 
 # ── Asterisk Kullanıcısı ─────────────────────────────────────
-useradd -r -d /var/lib/asterisk -M asterisk 2>/dev/null || true
+if ! id asterisk >/dev/null 2>&1; then
+  useradd -r -d /var/lib/asterisk -M asterisk
+fi
+id asterisk
 chown -R asterisk:asterisk /var/lib/asterisk /var/log/asterisk \
     /var/spool/asterisk /etc/asterisk /usr/lib/asterisk
 

@@ -1,0 +1,50 @@
+# ============================================================
+# AI Voice Platform — Git Line Ending Policy
+# Tüm kaynak dosyalar repository'de LF olarak saklanır.
+# Windows checkout'unda da LF korunur (core.autocrlf geçersiz kılınır).
+# ============================================================
+
+# Varsayılan: text dosyaları LF
+* text=auto eol=lf
+
+# JavaScript / Node.js
+*.js        text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.jsx       text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.json      text eol=lf
+
+# Web
+*.html      text eol=lf
+*.css       text eol=lf
+*.scss      text eol=lf
+
+# Config & Docs
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.conf      text eol=lf
+*.env       text eol=lf
+*.example   text eol=lf
+*.prisma    text eol=lf
+*.gitignore text eol=lf
+
+# Shell & Scripts — kesinlikle LF olmalı (Linux deploy hedefi)
+*.sh        text eol=lf
+Makefile    text eol=lf
+
+# Binary — dönüşüm yapma
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.wav   binary
+*.mp3   binary
+*.gsm   binary
