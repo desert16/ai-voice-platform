@@ -1,7 +1,11 @@
+const jwt = require('jsonwebtoken');
+const { error } = require('../utils/response');
+
 const JWT_SECRET = process.env.JWT_SECRET || 'voicecore_jwt_super_secret_2024';
 
 /**
  * JWT Authentication Middleware
+
  * Validates the token and attaches userId, tenantId, and role to req.user.
  */
 function authenticateToken(req, res, next) {
