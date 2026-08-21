@@ -19,15 +19,13 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      // Demo mode fallback — API henüz kurulmadıysa çalışır
-      localStorage.setItem('vc_token', 'demo-token');
-      localStorage.setItem('vc_user',   JSON.stringify({ name: 'VoiceCore Admin', email }));
-      localStorage.setItem('vc_tenant', JSON.stringify({ id: 'demo', name: 'VoiceCore Demo' }));
-      window.location.href = '/dashboard';
+      console.error('Giriş hatası:', err);
+      setError(err.response?.data?.error || err.response?.data?.message || err.message || 'Giriş yapılamadı. Bilgilerinizi kontrol edin.');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div style={{

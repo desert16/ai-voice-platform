@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 
 export default function Setup() {
-  const { tenant } = useAuth();
+  const { user, tenant } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -27,7 +27,8 @@ export default function Setup() {
     language: 'Turkish (TR)'
   });
 
-  const tenantId = tenant?.id || tenant?.slug || 'voicecore-demo';
+  const tenantId = user?.tenantId || tenant?.id;
+
 
   const steps = [
     { id: 1, title: 'SIP Trunk', icon: Phone },

@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 
 export default function Agent() {
-  const { tenant } = useAuth();
+  const { user, tenant } = useAuth();
   const [agentId, setAgentId] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [agentName, setAgentName] = useState('VoiceCore Assistant');
@@ -21,7 +21,8 @@ export default function Agent() {
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
 
-  const tenantId = tenant?.id || tenant?.slug || 'voicecore-demo';
+  const tenantId = user?.tenantId || tenant?.id;
+
 
   // 1. Ajan bilgilerini yükle
   useEffect(() => {
