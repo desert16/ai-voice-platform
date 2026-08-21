@@ -1,6 +1,17 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../../apps/api/.env') });
+
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL || 'postgresql://voicecore:voicecore_secret_2024@127.0.0.1:5432/voicecore',
+    },
+  },
+});
+
 
 // Precomputed bcrypt hash for 'admin123' ($2b$10$...) — avoids native compilation errors
 const ADMIN_PASSWORD_HASH = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
