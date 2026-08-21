@@ -1,5 +1,4 @@
-const jwt = require('jsonwebtoken');
-const { error } = require('../utils/response');
+const JWT_SECRET = process.env.JWT_SECRET || 'voicecore_jwt_super_secret_2024';
 
 /**
  * JWT Authentication Middleware
@@ -10,23 +9,27 @@ function authenticateToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.warn('[AUTH] İstekte token bulunamadı');
     return error(res, 'Access denied. No token provided.', 401);
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     
     // Validate tenant isolation unless it's a SUPERADMIN
     if (req.user.role !== 'SUPERADMIN' && !req.user.tenantId) {
+      console.warn('[AUTH] Token tenant context içermiyor');
       return error(res, 'Invalid token payload: missing tenant context.', 403);
     }
     
     next();
   } catch (err) {
-    return error(res, 'Invalid or expired token.', 403);
+    console.error('[AUTH ERROR] Token doğrulama hatası:', err.message);
+    return error(res, 'Invalid or expired token.', 401);
   }
 }
+
 
 /**
  * Middleware to require SUPERADMIN role

@@ -16,18 +16,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response: 401 gelince otomatik logout
+// Response: 401 veya token geçersizliği gelince otomatik logout
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || (error.response?.status === 403 && error.response?.data?.message?.toLowerCase().includes('token'))) {
       localStorage.removeItem('vc_token');
+      localStorage.removeItem('vc_user');
       localStorage.removeItem('vc_tenant');
-      window.location.href = '/login';
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
 );
+
 
 export default api;
 
