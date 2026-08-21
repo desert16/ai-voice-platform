@@ -2,12 +2,25 @@ const Redis = require('ioredis');
 
 class RedisService {
   constructor() {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://:voicecore_redis_2024@127.0.0.1:6379');
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST || '127.0.0.1',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD || 'voicecore_redis_2024',
+      maxRetriesPerRequest: 3,
+      retryStrategy(times) {
+        return Math.min(times * 200, 3000);
+      }
+    });
     
+    this.redis.on('connect', () => {
+      console.log('[REDIS] API Redis bağlantısı kuruldu ✓');
+    });
+
     this.redis.on('error', (err) => {
-      console.error('Redis Connection Error:', err);
+      console.error('[REDIS ERROR]:', err.message);
     });
   }
+
 
   async invalidateTenantConfig(tenantId) {
     try {
