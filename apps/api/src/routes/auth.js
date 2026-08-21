@@ -73,6 +73,27 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// GET /api/auth/me — Mevcut aktif oturum ve tenant bilgilerini döner
+router.get('/me', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return error(res, 'Token bulunamadı', 401);
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { tenant: true }
+    });
+    if (!user) return error(res, 'Kullanıcı bulunamadı', 404);
+
+    return success(res, 'Kullanıcı bilgisi alındı', { user, tenant: user.tenant });
+  } catch (err) {
+    return error(res, 'Geçersiz token', 401);
+  }
+});
+
+
 
 router.post('/refresh', (req, res) => {
   const { refreshToken } = req.body;

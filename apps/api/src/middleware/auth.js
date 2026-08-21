@@ -39,21 +39,36 @@ function requireSuperadmin(req, res, next) {
 }
 
 /**
- * Middleware to verify that the tenantId in URL matches the user's tenantId.
+ * Middleware to verify that the tenantId in URL matches the user's tenantId (by ID or Slug).
  */
-function checkTenantAccess(req, res, next) {
+async function checkTenantAccess(req, res, next) {
   const { tenantId } = req.params;
   
-  if (req.user.role === 'SUPERADMIN') {
+  if (req.user.role === 'SUPERADMIN' || tenantId === 'me' || tenantId === 'current') {
+    req.params.tenantId = req.user.tenantId;
     return next();
   }
 
-  if (req.user.tenantId !== tenantId) {
-    return error(res, 'Forbidden: Cross-tenant access denied.', 403);
+  if (req.user.tenantId === tenantId) {
+    return next();
   }
 
-  next();
+  // Check if tenantId in URL is a slug matching the user's tenant
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  try {
+    const tenant = await prisma.tenant.findFirst({
+      where: { OR: [{ id: tenantId }, { slug: tenantId }] }
+    });
+    if (tenant && tenant.id === req.user.tenantId) {
+      req.params.tenantId = tenant.id; // normalize to cuid
+      return next();
+    }
+  } catch (_) {}
+
+  return error(res, 'Forbidden: Cross-tenant access denied.', 403);
 }
+
 
 module.exports = {
   authenticateToken,
