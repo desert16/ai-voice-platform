@@ -107,6 +107,8 @@ router.post('/register-tenant', async (req, res) => {
     const { 
       companyName, slug, email, password, phone, 
       serviceType = 'FULL_SUITE', sectorCode = 'health',
+      hasPbx = true, hasCallCenter = false, hasAiAgent = false, hasCrm = false,
+      extensionCount = 5,
       initialGreeting
     } = req.body;
 
@@ -149,6 +151,11 @@ router.post('/register-tenant', async (req, res) => {
           phone,
           sectorId: sector?.id || null,
           serviceType: serviceType,
+          hasPbx: Boolean(hasPbx),
+          hasCallCenter: Boolean(hasCallCenter),
+          hasAiAgent: Boolean(hasAiAgent),
+          hasCrm: Boolean(hasCrm),
+          maxExtensions: Number(extensionCount) || 5,
           status: 'ACTIVE',
         },
       });
@@ -162,6 +169,7 @@ router.post('/register-tenant', async (req, res) => {
           role: 'OWNER',
         },
       });
+
 
       // Sektörün varsayılan modüllerini bağla
       if (sector && sector.sectorModules?.length) {

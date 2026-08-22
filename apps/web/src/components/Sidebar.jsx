@@ -3,9 +3,9 @@ import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Mic2, PhoneCall, Zap, Key,
-  Settings, LogOut, ChevronLeft, ChevronRight,
+  Settings, LogOut, ChevronLeft, ChevronRight, ChevronDown,
   Building2, Users, Calendar, Boxes, Table, Sparkles, PlusCircle,
-  Clock, BarChart3, Sliders
+  Clock, BarChart3, Sliders, Headphones, Shield, Lock, Activity
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -15,64 +15,36 @@ export default function Sidebar() {
   const location = useLocation();
   const params = useParams();
 
+  // Accordion açık/kapalı state'leri
+  const [openSections, setOpenSections] = useState({
+    pbx: true,
+    callCenter: true,
+    ai: true,
+    crm: true,
+    settings: false,
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const handleLogout = () => { logout(); navigate('/login'); };
-  const w = collapsed ? '64px' : '240px';
+  const w = collapsed ? '68px' : '250px';
 
   // Slug desteği
   const slugPrefix = params.tenantSlug ? `/${params.tenantSlug}` : '';
-  const serviceType = tenant?.serviceType || 'FULL_SUITE';
-
-  // Servis Tipine Göre Menü Filtreleme
-  let navItems = [];
-
-  if (serviceType === 'PBX_ONLY') {
-    // ☎️ SADECE SANTRAL MÜŞTERİSİ
-    navItems = [
-      { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
-      { to: `${slugPrefix}/setup`,        icon: Zap,             label: 'Santral & Dahililer' },
-      { to: `${slugPrefix}/pbx-routing`,  icon: Sliders,         label: 'Gelen Arama & IVR' },
-      { to: `${slugPrefix}/reports`,      icon: BarChart3,       label: 'Çağrı Raporları' },
-      { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Çağrı Kayıtları' },
-      { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Entegrasyonlar' },
-      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
-    ];
-  } else if (serviceType === 'AI_AGENT_ONLY') {
-    // 🤖 SADECE AI SESLİ AJAN
-    navItems = [
-      { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
-      { to: `${slugPrefix}/agent`,        icon: Mic2,            label: 'AI Ajan Studio' },
-      { to: `${slugPrefix}/records`,      icon: Table,           label: 'Canlı Çağrı Tablosu' },
-      { to: `${slugPrefix}/crm`,          icon: Users,           label: 'Müşteriler & Notlar' },
-      { to: `${slugPrefix}/reports`,      icon: BarChart3,       label: 'AI & Çağrı Raporu' },
-      { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Canlı Ses & Transkript' },
-      { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Santral Bağlantısı' },
-      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
-    ];
-  } else {
-    // ⭐ TAM PAKET (FULL SUITE)
-    navItems = [
-      { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
-      { to: `${slugPrefix}/setup`,        icon: Zap,             label: 'Santral Hatları' },
-      { to: `${slugPrefix}/agent`,        icon: Mic2,            label: 'AI Ajan Studio' },
-      { to: `${slugPrefix}/pbx-routing`,  icon: Sliders,         label: 'Gelen Arama & IVR' },
-      { to: `${slugPrefix}/records`,      icon: Table,           label: 'Canlı Sektör Tablosu' },
-      { to: `${slugPrefix}/reports`,      icon: BarChart3,       label: 'Çağrı Raporları' },
-      { to: `${slugPrefix}/crm`,          icon: Users,           label: 'CRM & Müşteriler' },
-      { to: `${slugPrefix}/appointments`, icon: Calendar,        label: 'Randevular' },
-      { to: `${slugPrefix}/modules`,      icon: Boxes,           label: 'Modül Yönetimi' },
-      { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Çağrı Geçmişi' },
-      { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Entegrasyonlar' },
-      { to: `${slugPrefix}/api-keys`,     icon: Key,             label: 'API Anahtarları' },
-      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
-    ];
-  }
-
+  
+  // Yetki & Modül Bayrakları (Varsayılan olarak Full Suite veya dinamik)
+  const hasPbx = tenant?.hasPbx !== false;
+  const hasCallCenter = tenant?.hasCallCenter === true || tenant?.serviceType === 'FULL_SUITE';
+  const hasAiAgent = tenant?.hasAiAgent === true || tenant?.serviceType === 'AI_AGENT_ONLY' || tenant?.serviceType === 'FULL_SUITE';
+  const hasCrm = tenant?.hasCrm === true || tenant?.serviceType === 'FULL_SUITE';
 
   return (
     <aside style={{
       position: 'fixed', top: 0, left: 0, bottom: 0,
       width: w, zIndex: 100,
-      background: 'rgba(8,8,24,0.92)',
+      background: 'rgba(8,8,24,0.95)',
       backdropFilter: 'blur(20px)',
       borderRight: '1px solid rgba(255,255,255,0.07)',
       display: 'flex', flexDirection: 'column',
@@ -80,22 +52,22 @@ export default function Sidebar() {
       overflow: 'hidden',
     }}>
 
-      {/* Logo */}
+      {/* Brand Header */}
       <div style={{
-        padding: '20px 16px', display: 'flex', alignItems: 'center',
+        padding: '16px 14px', display: 'flex', alignItems: 'center',
         gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)',
-        minHeight: '64px',
+        minHeight: '60px',
       }}>
         <div style={{
-          width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+          width: 32, height: 32, borderRadius: 8, flexShrink: 0,
           background: 'linear-gradient(135deg, #6C63FF, #00D4FF)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 18px rgba(108,99,255,0.45)',
+          boxShadow: '0 0 16px rgba(108,99,255,0.45)',
         }}>
-          <Mic2 size={18} color="#fff" />
+          <Zap size={16} color="#fff" />
         </div>
         {!collapsed && (
-          <span style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+          <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
             Voice<span style={{ color: '#6C63FF' }}>Core</span>
           </span>
         )}
@@ -113,89 +85,219 @@ export default function Sidebar() {
       {/* Tenant badge */}
       {!collapsed && tenant && (
         <div style={{
-          margin: '12px 12px 4px', padding: '8px 10px',
+          margin: '10px 12px 2px', padding: '8px 10px',
           background: 'rgba(108,99,255,0.08)',
           border: '1px solid rgba(108,99,255,0.18)',
           borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <Building2 size={13} color="#6C63FF" style={{ flexShrink: 0 }} />
+          <Building2 size={14} color="#00D4FF" style={{ flexShrink: 0 }} />
           <div style={{ overflow: 'hidden', flex: 1 }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {tenant.name || 'Firma'}
+              {tenant.name || 'Firma Paneli'}
             </div>
-            <div style={{ fontSize: '0.65rem', color: '#00D4FF' }}>
-              {serviceType === 'PBX_ONLY' ? '☎️ Bulut Santral' : serviceType === 'AI_AGENT_ONLY' ? '🤖 AI Sesli Ajan' : '⭐ Tam Paket'}
+            <div style={{ fontSize: '0.65rem', color: '#8F90A6' }}>
+              {tenant.slug || 'voicecore.ai'}
             </div>
           </div>
         </div>
       )}
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto', overflowX: 'hidden' }}>
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} style={({ isActive }) => ({
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: collapsed ? '10px' : '9px 12px',
-            borderRadius: 8, marginBottom: 2,
-            textDecoration: 'none', whiteSpace: 'nowrap',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            background: isActive ? 'rgba(108,99,255,0.15)' : 'transparent',
-            color: isActive ? '#fff' : '#A8A8C0',
-            border: isActive ? '1px solid rgba(108,99,255,0.28)' : '1px solid transparent',
-            transition: 'all 0.18s',
-            position: 'relative',
-          })}>
-            <Icon size={17} style={{ flexShrink: 0 }} />
-            {!collapsed && <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{label}</span>}
-          </NavLink>
-        ))}
+      {/* Accordion Navigation */}
+      <nav style={{ flex: 1, padding: '8px', overflowY: 'auto', overflowX: 'hidden' }}>
+        
+        {/* 1. GRUP: BULUT SANTRAL (PBX) */}
+        {hasPbx && (
+          <div style={{ marginBottom: 8 }}>
+            {!collapsed && (
+              <div
+                onClick={() => toggleSection('pbx')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '6px 8px', color: '#8F90A6', fontSize: '0.72rem', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PhoneCall size={12} color="#00D4FF" />
+                  <span>Bulut Santral</span>
+                </div>
+                <ChevronDown size={12} style={{ transform: openSections.pbx ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+              </div>
+            )}
 
-        {/* Sadece Santral Müşterisine AI Ekleme Kartı */}
-        {!collapsed && serviceType === 'PBX_ONLY' && (
-          <div style={{
-            margin: '16px 4px 8px', padding: '12px',
-            background: 'linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,255,0.1))',
-            border: '1px solid rgba(108,99,255,0.3)', borderRadius: 10,
-            textAlign: 'center'
-          }}>
-            <Sparkles size={16} color="#00D4FF" style={{ marginBottom: 4 }} />
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff', marginBottom: 2 }}>Yapay Zeka Asistanı</div>
-            <div style={{ fontSize: '0.65rem', color: '#A8A8C0', marginBottom: 8 }}>Gelen çağrıları otomatik karşılasın.</div>
-            <button
-              onClick={() => navigate(`${slugPrefix}/integrations`)}
-              style={{
-                width: '100%', background: 'linear-gradient(135deg, #6C63FF, #00D4FF)',
-                border: 'none', borderRadius: 6, padding: '5px', color: '#fff',
-                fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer'
-              }}
-            >
-              + AI Asistan Ekle
-            </button>
+            {(openSections.pbx || collapsed) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <NavLink to={`${slugPrefix}/dashboard`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <LayoutDashboard size={16} />
+                  {!collapsed && <span>Dashboard</span>}
+                </NavLink>
+
+                <NavLink to={`${slugPrefix}/setup`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <Zap size={16} />
+                  {!collapsed && <span>Dahililer & Hatlar</span>}
+                </NavLink>
+
+                <NavLink to={`${slugPrefix}/pbx-routing`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <Sliders size={16} />
+                  {!collapsed && <span>Gelen Arama & IVR</span>}
+                </NavLink>
+
+                <NavLink to={`${slugPrefix}/calls`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <PhoneCall size={16} />
+                  {!collapsed && <span>Çağrı Kayıtları</span>}
+                </NavLink>
+              </div>
+            )}
           </div>
         )}
+
+        {/* 2. GRUP: ÇAĞRI MERKEZİ (CALL CENTER) */}
+        {hasCallCenter ? (
+          <div style={{ marginBottom: 8 }}>
+            {!collapsed && (
+              <div
+                onClick={() => toggleSection('callCenter')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '6px 8px', color: '#8F90A6', fontSize: '0.72rem', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Headphones size={12} color="#6C63FF" />
+                  <span>Çağrı Merkezi</span>
+                </div>
+                <ChevronDown size={12} style={{ transform: openSections.callCenter ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+              </div>
+            )}
+
+            {(openSections.callCenter || collapsed) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <NavLink to={`${slugPrefix}/reports`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <BarChart3 size={16} />
+                  {!collapsed && <span>CC & Çağrı Raporları</span>}
+                </NavLink>
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {/* 3. GRUP: AI SESLİ ASİSTAN */}
+        {hasAiAgent ? (
+          <div style={{ marginBottom: 8 }}>
+            {!collapsed && (
+              <div
+                onClick={() => toggleSection('ai')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '6px 8px', color: '#8F90A6', fontSize: '0.72rem', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Sparkles size={12} color="#10B981" />
+                  <span>AI Sesli Asistan</span>
+                </div>
+                <ChevronDown size={12} style={{ transform: openSections.ai ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+              </div>
+            )}
+
+            {(openSections.ai || collapsed) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <NavLink to={`${slugPrefix}/agent`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <Mic2 size={16} />
+                  {!collapsed && <span>AI Prompt Studio</span>}
+                </NavLink>
+
+                <NavLink to={`${slugPrefix}/records`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <Table size={16} />
+                  {!collapsed && <span>Canlı Sektör Tablosu</span>}
+                </NavLink>
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {/* 4. GRUP: SEKTÖREL CRM */}
+        {hasCrm ? (
+          <div style={{ marginBottom: 8 }}>
+            {!collapsed && (
+              <div
+                onClick={() => toggleSection('crm')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '6px 8px', color: '#8F90A6', fontSize: '0.72rem', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Users size={12} color="#F59E0B" />
+                  <span>Sektörel CRM</span>
+                </div>
+                <ChevronDown size={12} style={{ transform: openSections.crm ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+              </div>
+            )}
+
+            {(openSections.crm || collapsed) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <NavLink to={`${slugPrefix}/crm`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <Users size={16} />
+                  {!collapsed && <span>Müşteriler & Rehber</span>}
+                </NavLink>
+
+                <NavLink to={`${slugPrefix}/appointments`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+                  <Calendar size={16} />
+                  {!collapsed && <span>Randevular</span>}
+                </NavLink>
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {/* 5. GRUP: YÖNETİM & AYARLAR */}
+        <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 8 }}>
+          <NavLink to={`${slugPrefix}/modules`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+            <Boxes size={16} />
+            {!collapsed && <span>Modül Mağazası & Paket</span>}
+          </NavLink>
+
+          <NavLink to={`${slugPrefix}/integrations`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+            <Key size={16} />
+            {!collapsed && <span>Entegrasyonlar</span>}
+          </NavLink>
+
+          <NavLink to={`${slugPrefix}/settings`} style={({ isActive }) => navLinkStyle(isActive, collapsed)}>
+            <Settings size={16} />
+            {!collapsed && <span>Ayarlar</span>}
+          </NavLink>
+        </div>
+
       </nav>
 
-
-      {/* User + Logout */}
+      {/* User & Logout */}
       <div style={{ padding: '10px 8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {!collapsed && user && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 9,
-            padding: '8px 10px', marginBottom: 4,
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 8px', marginBottom: 4,
           }}>
             <div style={{
-              width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
               background: 'linear-gradient(135deg, #6C63FF, #00D4FF)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.8rem', fontWeight: 700, color: '#fff',
+              fontSize: '0.75rem', fontWeight: 700, color: '#fff',
             }}>
               {(user.name || user.email || 'U')[0].toUpperCase()}
             </div>
             <div style={{ overflow: 'hidden', flex: 1 }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user.name || 'Admin'}
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.name || 'Yönetici'}
               </div>
-              <div style={{ fontSize: '0.7rem', color: '#5A5A7A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '0.65rem', color: '#5A5A7A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.email}
               </div>
             </div>
@@ -203,21 +305,38 @@ export default function Sidebar() {
         )}
         <button onClick={handleLogout} style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          width: '100%', padding: collapsed ? '9px' : '8px 12px',
+          width: '100%', padding: collapsed ? '8px' : '7px 10px',
           justifyContent: collapsed ? 'center' : 'flex-start',
           background: 'transparent', border: '1px solid transparent',
-          borderRadius: 8, color: '#5A5A7A', cursor: 'pointer',
-          fontSize: '0.875rem', fontWeight: 500,
-          transition: 'all 0.18s',
-          fontFamily: 'inherit',
+          borderRadius: 6, color: '#5A5A7A', cursor: 'pointer',
+          fontSize: '0.8rem', fontWeight: 500, transition: 'all 0.18s',
         }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5A5A7A'; e.currentTarget.style.borderColor = 'transparent'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5A5A7A'; }}
         >
-          <LogOut size={16} />
-          {!collapsed && 'Çıkış'}
+          <LogOut size={15} />
+          {!collapsed && 'Çıkış Yap'}
         </button>
       </div>
     </aside>
   );
+}
+
+function navLinkStyle(isActive, collapsed) {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: collapsed ? '9px' : '8px 12px',
+    borderRadius: 8,
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+    justifyContent: collapsed ? 'center' : 'flex-start',
+    background: isActive ? 'rgba(108,99,255,0.18)' : 'transparent',
+    color: isActive ? '#fff' : '#A8A8C0',
+    border: isActive ? '1px solid rgba(108,99,255,0.3)' : '1px solid transparent',
+    fontSize: '0.82rem',
+    fontWeight: isActive ? 600 : 500,
+    transition: 'all 0.15s',
+  };
 }

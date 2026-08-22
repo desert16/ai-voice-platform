@@ -3,14 +3,15 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   Building2, PhoneCall, Bot, Layers, Sparkles, Check, 
   ArrowRight, ArrowLeft, ShieldCheck, Zap, Globe, Lock, Mail, Phone,
-  Users, DollarSign, Calculator, CheckCircle2
+  Users, DollarSign, Calculator, CheckCircle2, Headphones, CreditCard,
+  Building, CheckCircle, Shield
 } from 'lucide-react';
 
 const API_BASE = 'http://192.168.203.138:3000/api';
 
 const FALLBACK_SECTORS = [
   { code: 'health',            name: 'Sağlık & Klinik',      icon: '🏥', description: 'Diş, göz, estetik, poliklinik' },
-  { code: 'real_estate',       name: 'Emlak',                 icon: '🏠', description: 'Gayrimenkul ve portföy' },
+  { code: 'real_estate',       name: 'Emlak & Gayrimenkul',  icon: '🏠', description: 'Satılık/kiralık portföy, konut' },
   { code: 'restaurant',        name: 'Restoran & Kafe',       icon: '🍽️', description: 'Rezervasyon ve paket servis' },
   { code: 'ecommerce',         name: 'E-Ticaret & Kargo',     icon: '🛒', description: 'Sipariş ve kargo takibi' },
   { code: 'automotive',        name: 'Otomotiv & Oto Servis', icon: '🚗', description: 'Servis randevusu ve parça' },
@@ -25,34 +26,71 @@ const FALLBACK_SECTORS = [
   { code: 'other',             name: 'Özel / Diğer',          icon: '⭐', description: 'Genel işletme akışı' },
 ];
 
-const SERVICE_OPTIONS = [
+const PACKAGES = [
+  {
+    id: 'PBX_STANDALONE',
+    title: '☎️ Bulut Santral',
+    badge: 'Temel Santral',
+    icon: PhoneCall,
+    desc: 'Dahili hatlar, SIP Trunk, IVR sesli karşılama, mesai saatleri ve ses kayıtları.',
+    basePrice: 199,
+    includedExt: 3,
+    perExtPrice: 49,
+    features: ['3 Dahili Hat Dahil', 'Sesli Karşılama (IVR)', 'Mesai İçi / Dışı Yönlendirme', 'Ses Kayıtları & Geçmiş'],
+    hasPbx: true,
+    hasCallCenter: false,
+    hasAiAgent: false,
+    hasCrm: false,
+    serviceType: 'PBX_ONLY'
+  },
+  {
+    id: 'PBX_CALL_CENTER',
+    title: '🎧 Santral + Çağrı Merkezi',
+    badge: 'Müşteri Hizmetleri',
+    icon: Headphones,
+    desc: 'Santrale ek olarak çağrı kuyrukları, canlı wallboard, temsilci yönetimi ve SLA raporları.',
+    basePrice: 499,
+    includedExt: 5,
+    perExtPrice: 49,
+    features: ['5 Dahili & Temsilci Dahil', 'Çağrı Kuyrukları & Dağıtım', 'Canlı Duvar Panosu (Wallboard)', 'Detaylı Çağrı Merkezi Raporları'],
+    hasPbx: true,
+    hasCallCenter: true,
+    hasAiAgent: false,
+    hasCrm: false,
+    serviceType: 'PBX_ONLY'
+  },
+  {
+    id: 'AI_VOICE_AGENT',
+    title: '🤖 Sadece AI Sesli Asistan',
+    badge: 'Santrali Olanlar İçin',
+    icon: Bot,
+    desc: 'Mevcut santralinize bağlanan 7/24 konuşan yapay zeka ve sektörel veri toplama tablosu.',
+    basePrice: 899,
+    includedExt: 1,
+    perExtPrice: 0,
+    features: ['Gemini Live 8kHz Ses Motoru', 'Sektörel Akış & Parametreler', 'Canlı Çağrı / Lead Tablosu', '5.000 Konuşma Dakikası'],
+    hasPbx: false,
+    hasCallCenter: false,
+    hasAiAgent: true,
+    hasCrm: true,
+    serviceType: 'AI_AGENT_ONLY'
+  },
   {
     id: 'FULL_SUITE',
-    icon: Sparkles,
-    title: '⭐ Tam Paket (Santral + AI + Sektörel CRM)',
-    desc: 'Bulut santral, Gemini Live sesli asistan ve sektörünüze özel canlı müşteri tablosu bir arada.',
+    title: '⭐ Tam Paket (All-in-One)',
+    badge: 'En Popüler',
     popular: true,
-    badge: 'En Çok Tercih Edilen',
-    basePrice: 799,
-    perExtPrice: 49
-  },
-  {
-    id: 'AI_AGENT_ONLY',
-    icon: Bot,
-    title: '🤖 Sadece AI Sesli Asistan',
-    desc: 'Mevcut kendi santraliniz (Asterisk, Netgsm, 3CX vb.) var ise, sadece yapay zeka sesli ajanını bağlayın.',
-    badge: 'Santrali Olanlar İçin',
-    basePrice: 999,
-    perExtPrice: 0
-  },
-  {
-    id: 'PBX_ONLY',
-    icon: PhoneCall,
-    title: '☎️ Sadece Bulut Santral',
-    desc: 'Dahili hatlar, ses kayıtları, IVR ve çağrı merkezi özellikleri. (İleride tek tıkla AI eklenebilir)',
-    badge: 'Temel Santral',
-    basePrice: 0,
-    perExtPrice: 49
+    icon: Sparkles,
+    desc: 'Bulut Santral + Çağrı Merkezi + AI Sesli Asistan + Sektörel CRM tek platformda bir arada.',
+    basePrice: 1299,
+    includedExt: 10,
+    perExtPrice: 49,
+    features: ['10 Dahili & Temsilci Dahil', 'Kuyruklar & Canlı Wallboard', 'AI Sesli Asistan (7/24 Randevu)', 'Sektörel CRM & Canlı Tablo'],
+    hasPbx: true,
+    hasCallCenter: true,
+    hasAiAgent: true,
+    hasCrm: true,
+    serviceType: 'FULL_SUITE'
   }
 ];
 
@@ -63,6 +101,19 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Seçili Paket & Parametreler
+  const [selectedPackageId, setSelectedPackageId] = useState('PBX_STANDALONE');
+  const [extensionCount, setExtensionCount] = useState(3);
+  const [paymentMethod, setPaymentMethod] = useState('CARD'); // 'CARD' | 'BANK_TRANSFER'
+
+  // Kredi Kartı Form State (Simülasyon)
+  const [cardData, setCardData] = useState({
+    nameOnCard: '',
+    cardNumber: '4543 •••• •••• 9012',
+    expiry: '12/28',
+    cvv: '•••'
+  });
+
   // Form State
   const [formData, setFormData] = useState({
     companyName: '',
@@ -70,9 +121,7 @@ export default function Onboarding() {
     email: '',
     phone: '',
     password: '',
-    serviceType: 'FULL_SUITE',
-    sectorCode: 'health',
-    extensionCount: 5,
+    sectorCode: 'real_estate',
     initialGreeting: '',
   });
 
@@ -84,9 +133,7 @@ export default function Onboarding() {
           setSectors(res.data);
         }
       })
-      .catch(() => {
-        // Fallback kullanılmaya devam edilir
-      });
+      .catch(() => {});
   }, []);
 
   const handleCompanyNameChange = (val) => {
@@ -103,24 +150,47 @@ export default function Onboarding() {
     }));
   };
 
-  // Dinamik Fiyat Hesaplama
-  const selectedService = SERVICE_OPTIONS.find(s => s.id === formData.serviceType) || SERVICE_OPTIONS[0];
-  const monthlyTotal = selectedService.basePrice + (formData.extensionCount * selectedService.perExtPrice);
+  const currentPkg = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
 
-  const handleSubmit = async () => {
+  // Fiyat Hesaplama
+  const extraExt = Math.max(0, extensionCount - currentPkg.includedExt);
+  const monthlyTotal = currentPkg.basePrice + (extraExt * currentPkg.perExtPrice);
+
+  const handlePackageSelect = (pkg) => {
+    setSelectedPackageId(pkg.id);
+    setExtensionCount(pkg.includedExt);
+  };
+
+  const handleCompleteOrder = async () => {
     try {
       setSubmitting(true);
       setErrorMsg('');
 
+      const payload = {
+        companyName: formData.companyName,
+        slug: formData.slug,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        serviceType: currentPkg.serviceType,
+        sectorCode: formData.sectorCode,
+        hasPbx: currentPkg.hasPbx,
+        hasCallCenter: currentPkg.hasCallCenter,
+        hasAiAgent: currentPkg.hasAiAgent,
+        hasCrm: currentPkg.hasCrm,
+        extensionCount: extensionCount,
+        initialGreeting: formData.initialGreeting,
+      };
+
       const res = await fetch(`${API_BASE}/auth/register-tenant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Kayıt sırasında bir sorun oluştu');
+        throw new Error(data.error || 'Kayıt sırasında bir hata oluştu');
       }
 
       if (data.data?.tokens?.accessToken) {
@@ -147,9 +217,9 @@ export default function Onboarding() {
     }}>
       
       {/* Brand Header */}
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, #6C63FF, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(108,99,255,0.5)' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #6C63FF, #00D4FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(108,99,255,0.5)' }}>
             <Zap size={22} color="#fff" />
           </div>
           <span style={{ fontWeight: 800, fontSize: '1.4rem', letterSpacing: '-0.03em' }}>
@@ -157,20 +227,20 @@ export default function Onboarding() {
           </span>
         </div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-          Yeni Nesil İletişim Panelinizi Oluşturun
+          Yeni Nesil İletişim & Santral Sisteminizi Kurun
         </h1>
         <p style={{ color: '#8F90A6', fontSize: '0.9rem', margin: 0 }}>
-          Hizmet paketinizi, dahili sayınızı ve sektörünüzü seçin; size özel panel anında hazırlansın.
+          Paketinizi belirleyin, sektörünüze özel parametreleri seçin; paneliniz saniyeler içinde hazır olsun.
         </p>
       </div>
 
-      {/* Main Wizard Card */}
+      {/* Main Wizard Container */}
       <div style={{
-        width: '100%', maxWidth: 760,
+        width: '100%', maxWidth: 840,
         background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(24px)',
         border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 20, padding: '30px 34px',
+        borderRadius: 20, padding: '30px 36px',
         boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
         position: 'relative'
       }}>
@@ -178,10 +248,10 @@ export default function Onboarding() {
         {/* Step Indicator */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, position: 'relative' }}>
           {[
-            { num: 1, label: 'Firma & Giriş' },
-            { num: 2, label: 'Paket & Dahili' },
-            { num: 3, label: 'Sektör & Akış' },
-            { num: 4, label: 'Fiyat & Başlat' },
+            { num: 1, label: '1. Firma Bilgisi' },
+            { num: 2, label: '2. Paket & Dahili' },
+            { num: 3, label: '3. Sektör & Akış' },
+            { num: 4, label: '4. Ödeme & Başlat' },
           ].map((s) => (
             <div key={s.num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 2 }}>
               <div style={{
@@ -207,7 +277,7 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* ── STEP 1: Firma & Giriş Bilgileri ── */}
+        {/* ── ADIM 1: Firma & Giriş Bilgileri ── */}
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
@@ -215,7 +285,7 @@ export default function Onboarding() {
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Building2 size={16} color="#6C63FF" style={{ position: 'absolute', left: 14 }} />
                 <input
-                  type="text" required placeholder="Örn: Akkuş Emlak Gayrimenkul"
+                  type="text" required placeholder="Örn: Akkuş Gayrimenkul"
                   value={formData.companyName}
                   onChange={(e) => handleCompanyNameChange(e.target.value)}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 14px 12px 42px', color: '#fff', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }}
@@ -242,7 +312,7 @@ export default function Onboarding() {
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <Mail size={16} color="#8F90A6" style={{ position: 'absolute', left: 14 }} />
                   <input
-                    type="email" required placeholder="yonetici@akkusemlak.com"
+                    type="email" required placeholder="yonetici@firma.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 14px 12px 42px', color: '#fff', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }}
@@ -276,92 +346,99 @@ export default function Onboarding() {
                 opacity: (!formData.companyName || !formData.email || !formData.password) ? 0.5 : 1
               }}
             >
-              Hizmet & Dahili Seçimiyle Devam Et <ArrowRight size={16} />
+              Hizmet Paketi Seçimiyle Devam Et <ArrowRight size={16} />
             </button>
           </div>
         )}
 
-        {/* ── STEP 2: Hizmet Tipi & Dahili Sayısı & Canlı Fiyat ── */}
+        {/* ── ADIM 2: 4 Temel Paket & Dahili Sayısı Seçimi ── */}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ fontSize: '0.85rem', color: '#8F90A6' }}>
-              İhtiyaç duyduğunuz santral paketini ve kullanıcı (dahili) sayınızı belirleyin:
+              İşletmenizin ihtiyacına uygun temel paketi seçin (İhtiyacınıza göre diğer modülleri istediğiniz zaman ekleyebilirsiniz):
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {SERVICE_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                const isSelected = formData.serviceType === opt.id;
+            {/* 4 Temel Paket Kartı */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {PACKAGES.map((pkg) => {
+                const Icon = pkg.icon;
+                const isSelected = selectedPackageId === pkg.id;
 
                 return (
                   <div
-                    key={opt.id}
-                    onClick={() => setFormData({ ...formData, serviceType: opt.id })}
+                    key={pkg.id}
+                    onClick={() => handlePackageSelect(pkg)}
                     style={{
                       border: isSelected ? '2px solid #6C63FF' : '1px solid rgba(255,255,255,0.08)',
                       background: isSelected ? 'rgba(108,99,255,0.12)' : 'rgba(255,255,255,0.02)',
-                      borderRadius: 12, padding: '14px 18px', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 14,
+                      borderRadius: 12, padding: '16px', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10,
+                      boxShadow: isSelected ? '0 0 20px rgba(108,99,255,0.25)' : 'none',
                       transition: 'all 0.2s'
                     }}
                   >
-                    <div style={{
-                      width: 38, height: 38, borderRadius: 10,
-                      background: isSelected ? 'linear-gradient(135deg, #6C63FF, #00D4FF)' : 'rgba(255,255,255,0.06)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                    }}>
-                      <Icon size={18} color="#fff" />
-                    </div>
-
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{opt.title}</span>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 8,
+                            background: isSelected ? 'linear-gradient(135deg, #6C63FF, #00D4FF)' : 'rgba(255,255,255,0.06)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                            <Icon size={16} color="#fff" />
+                          </div>
+                          <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{pkg.title}</span>
+                        </div>
                         <span style={{ fontSize: '0.65rem', background: isSelected ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.06)', color: isSelected ? '#00D4FF' : '#8F90A6', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
-                          {opt.badge}
+                          {pkg.badge}
                         </span>
                       </div>
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#8F90A6', lineHeight: 1.3 }}>
-                        {opt.desc}
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8F90A6', lineHeight: 1.3 }}>
+                        {pkg.desc}
                       </p>
                     </div>
 
-                    <div style={{
-                      width: 18, height: 18, borderRadius: '50%',
-                      border: isSelected ? '5px solid #6C63FF' : '2px solid rgba(255,255,255,0.2)',
-                      background: '#fff', flexShrink: 0
-                    }} />
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>
+                        {pkg.basePrice.toLocaleString('tr-TR')} ₺<span style={{ fontSize: '0.75rem', color: '#8F90A6', fontWeight: 400 }}> / ay</span>
+                      </span>
+                      <div style={{
+                        width: 16, height: 16, borderRadius: '50%',
+                        border: isSelected ? '4px solid #6C63FF' : '2px solid rgba(255,255,255,0.2)',
+                        background: '#fff'
+                      }} />
+                    </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Dahili Sayısı Seçimi (PBX_ONLY veya FULL_SUITE için) */}
-            {formData.serviceType !== 'AI_AGENT_ONLY' && (
+            {/* Dahili Sayısı Seçimi (Santral veya Call Center paketleri için) */}
+            {currentPkg.hasPbx && (
               <div style={{
                 background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12, padding: '16px 18px', marginTop: 4
+                borderRadius: 12, padding: '14px 18px', marginTop: 4
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Users size={18} color="#00D4FF" />
-                    <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>İhtiyaç Duyulan Dahili (Kullanıcı) Sayısı</span>
+                    <Users size={16} color="#00D4FF" />
+                    <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>İhtiyaç Duyulan Dahili (Kullanıcı) Sayısı</span>
                   </div>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00D4FF' }}>
-                    {formData.extensionCount} Dahili
+                  <span style={{ fontSize: '1rem', fontWeight: 800, color: '#00D4FF' }}>
+                    {extensionCount} Dahili
                   </span>
                 </div>
 
-                {/* Hızlı Butonlar */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[3, 5, 10, 20, 50, 100].map(cnt => (
                     <button
                       key={cnt}
                       type="button"
-                      onClick={() => setFormData({ ...formData, extensionCount: cnt })}
+                      onClick={() => setExtensionCount(cnt)}
                       style={{
-                        flex: 1, minWidth: 45, padding: '6px',
-                        background: formData.extensionCount === cnt ? 'linear-gradient(135deg, #6C63FF, #00D4FF)' : 'rgba(255,255,255,0.05)',
-                        border: formData.extensionCount === cnt ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                        flex: 1, minWidth: 40, padding: '6px',
+                        background: extensionCount === cnt ? 'linear-gradient(135deg, #6C63FF, #00D4FF)' : 'rgba(255,255,255,0.05)',
+                        border: extensionCount === cnt ? 'none' : '1px solid rgba(255,255,255,0.1)',
                         borderRadius: 6, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer'
                       }}
                     >
@@ -369,22 +446,18 @@ export default function Onboarding() {
                     </button>
                   ))}
                 </div>
-
-                <div style={{ fontSize: '0.75rem', color: '#8F90A6' }}>
-                  Dahili başına aylık 49 ₺ (Sınırsız dahili içi görüşme, ses kaydı ve IVR dahil).
-                </div>
               </div>
             )}
 
-            {/* Canlı Fiyatlandırma Kartı */}
+            {/* Canlı Fiyatlandırma Kutusu */}
             <div style={{
               background: 'linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,255,0.15))',
-              border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, padding: '14px 18px',
+              border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, padding: '12px 18px',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
               <div>
-                <div style={{ fontSize: '0.75rem', color: '#00D4FF', fontWeight: 700, textTransform: 'uppercase' }}>Tahmini Aylık Tutar</div>
-                <div style={{ fontSize: '0.8rem', color: '#A8A8C0' }}>{formData.extensionCount} Dahili + Seçilen Paket</div>
+                <div style={{ fontSize: '0.75rem', color: '#00D4FF', fontWeight: 700, textTransform: 'uppercase' }}>Aylık Paket Tutarı</div>
+                <div style={{ fontSize: '0.8rem', color: '#A8A8C0' }}>{currentPkg.title} ({extensionCount} Dahili)</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff' }}>{monthlyTotal.toLocaleString('tr-TR')} ₺</span>
@@ -392,16 +465,16 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
               <button
                 onClick={() => setStep(1)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '13px', color: '#A8A8C0', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '12px', color: '#A8A8C0', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
               >
                 <ArrowLeft size={16} /> Geri
               </button>
               <button
                 onClick={() => setStep(3)}
-                style={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #00D4FF)', border: 'none', borderRadius: 10, padding: '13px', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                style={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #00D4FF)', border: 'none', borderRadius: 10, padding: '12px', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
               >
                 Sektör Seçimiyle Devam Et <ArrowRight size={16} />
               </button>
@@ -409,7 +482,7 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* ── STEP 3: Sektör Seçimi & Görsel Kartlar ── */}
+        {/* ── ADIM 3: Sektör Seçimi ── */}
         {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
@@ -420,7 +493,6 @@ export default function Onboarding() {
                 <span style={{ fontSize: '0.75rem', color: '#00D4FF' }}>{sectors.length} Sektör Mevcut</span>
               </div>
 
-              {/* 14 Sektör Görsel Grid */}
               <div style={{
                 display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
                 gap: 10, maxHeight: 250, overflowY: 'auto', paddingRight: 4, paddingBottom: 4
@@ -442,87 +514,146 @@ export default function Onboarding() {
                     >
                       <span style={{ fontSize: '1.6rem' }}>{sec.icon}</span>
                       <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isSelected ? '#fff' : '#A8A8C0' }}>{sec.name}</span>
-                      {sec.description && (
-                        <span style={{ fontSize: '0.65rem', color: '#5A5A7A', lineHeight: 1.2 }}>{sec.description}</span>
-                      )}
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {formData.serviceType !== 'PBX_ONLY' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#A8A8C0', marginBottom: 6 }}>
-                  AI Sesli Asistan İlk Karşılama Cümlesi
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.initialGreeting}
-                  onChange={(e) => setFormData({ ...formData, initialGreeting: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: '0.85rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
-                />
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               <button
                 onClick={() => setStep(2)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '13px', color: '#A8A8C0', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '12px', color: '#A8A8C0', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
               >
                 <ArrowLeft size={16} /> Geri
               </button>
               <button
                 onClick={() => setStep(4)}
-                style={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #00D4FF)', border: 'none', borderRadius: 10, padding: '13px', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                style={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #00D4FF)', border: 'none', borderRadius: 10, padding: '12px', color: '#fff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
               >
-                Özet ve Fiyat Onayı <ArrowRight size={16} />
+                Ödeme ve Paneli Başlat <ArrowRight size={16} />
               </button>
             </div>
           </div>
         )}
 
-        {/* ── STEP 4: Özet, Fiyat & Paneli Başlatma ── */}
+        {/* ── ADIM 4: Sipariş Özeti, Ödeme & Paneli Açma ── */}
         {step === 4 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.25)', borderRadius: 12, padding: '18px 20px' }}>
+            {/* Sipariş Özeti */}
+            <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.25)', borderRadius: 12, padding: '16px 20px' }}>
               <div style={{ fontSize: '0.8rem', color: '#00D4FF', fontWeight: 700, textTransform: 'uppercase', marginBottom: 10 }}>
-                Seçilen Hizmet ve Panel Özeti
+                Sipariş & Panel Özeti
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: '0.85rem' }}>
-                <div><span style={{ color: '#8F90A6' }}>Firma:</span> <strong>{formData.companyName}</strong></div>
-                <div><span style={{ color: '#8F90A6' }}>Panel URL:</span> <strong style={{ color: '#6C63FF' }}>voicecore.ai/{formData.slug}</strong></div>
-                <div><span style={{ color: '#8F90A6' }}>Hizmet Paketi:</span> <strong>{selectedService.title}</strong></div>
-                <div><span style={{ color: '#8F90A6' }}>Dahili Sayısı:</span> <strong>{formData.extensionCount} Dahili</strong></div>
-                <div><span style={{ color: '#8F90A6' }}>Seçilen Sektör:</span> <strong>{sectors.find(s => s.code === formData.sectorCode)?.name || 'Genel'}</strong></div>
-                <div><span style={{ color: '#8F90A6' }}>Aylık Tutar:</span> <strong style={{ color: '#10B981', fontSize: '1rem' }}>{monthlyTotal.toLocaleString('tr-TR')} ₺/ay</strong></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: '0.85rem' }}>
+                <div><span style={{ color: '#8F90A6' }}>Firma Adı:</span> <strong>{formData.companyName}</strong></div>
+                <div><span style={{ color: '#8F90A6' }}>Özel URL:</span> <strong style={{ color: '#6C63FF' }}>voicecore.ai/{formData.slug}</strong></div>
+                <div><span style={{ color: '#8F90A6' }}>Seçilen Paket:</span> <strong>{currentPkg.title}</strong></div>
+                <div><span style={{ color: '#8F90A6' }}>Dahili Sayısı:</span> <strong>{extensionCount} Dahili</strong></div>
+                <div><span style={{ color: '#8F90A6' }}>Sektör:</span> <strong>{sectors.find(s => s.code === formData.sectorCode)?.name || 'Genel'}</strong></div>
+                <div><span style={{ color: '#8F90A6' }}>Aylık Tutar:</span> <strong style={{ color: '#10B981', fontSize: '1.1rem' }}>{monthlyTotal.toLocaleString('tr-TR')} ₺/ay</strong></div>
               </div>
             </div>
 
-            <p style={{ fontSize: '0.8rem', color: '#8F90A6', margin: '0', lineHeight: 1.4 }}>
-              "Paneli Oluştur ve Giriş Yap" butonuna bastığınızda seçtiğiniz dahili sayısı, sektörünüze özel canlı çağrı tablosu ve Asterisk santral yönlendirmeleriniz hazır edilecektir.
-            </p>
+            {/* Ödeme Yöntemi Seçimi */}
+            <div>
+              <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#A8A8C0', marginBottom: 8, display: 'block' }}>
+                Ödeme Yöntemi Seçin
+              </label>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                <div
+                  onClick={() => setPaymentMethod('CARD')}
+                  style={{
+                    padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                    background: paymentMethod === 'CARD' ? 'rgba(108,99,255,0.2)' : 'rgba(255,255,255,0.03)',
+                    border: paymentMethod === 'CARD' ? '2px solid #6C63FF' : '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex', alignItems: 'center', gap: 10
+                  }}
+                >
+                  <CreditCard size={18} color="#00D4FF" />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Kredi / Banka Kartı</div>
+                    <div style={{ fontSize: '0.7rem', color: '#8F90A6' }}>3D Secure ile Anında Açılış</div>
+                  </div>
+                </div>
+
+                <div
+                  onClick={() => setPaymentMethod('BANK_TRANSFER')}
+                  style={{
+                    padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                    background: paymentMethod === 'BANK_TRANSFER' ? 'rgba(108,99,255,0.2)' : 'rgba(255,255,255,0.03)',
+                    border: paymentMethod === 'BANK_TRANSFER' ? '2px solid #6C63FF' : '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex', alignItems: 'center', gap: 10
+                  }}
+                >
+                  <Building size={18} color="#10B981" />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Kurumsal Havale / EFT</div>
+                    <div style={{ fontSize: '0.7rem', color: '#8F90A6' }}>14 Gün Ücretsiz Deneme</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kredi Kartı Bilgileri Alanı */}
+              {paymentMethod === 'CARD' && (
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', color: '#8F90A6', display: 'block', marginBottom: 4 }}>Kart Numarası</label>
+                      <input
+                        type="text"
+                        value={cardData.cardNumber}
+                        onChange={(e) => setCardData({ ...cardData, cardNumber: e.target.value })}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px', color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', color: '#8F90A6', display: 'block', marginBottom: 4 }}>Son Kullanma</label>
+                      <input
+                        type="text"
+                        value={cardData.expiry}
+                        onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px', color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', color: '#8F90A6', display: 'block', marginBottom: 4 }}>CVV</label>
+                      <input
+                        type="password"
+                        value={cardData.cvv}
+                        onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px', color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', color: '#10B981' }}>
+                    <Shield size={12} /> 256-Bit SSL Güvenli Ödeme Altyapısı ile korunmaktadır.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               <button
                 disabled={submitting}
                 onClick={() => setStep(3)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '13px', color: '#A8A8C0', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10, padding: '12px', color: '#A8A8C0', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
               >
                 <ArrowLeft size={16} /> Geri
               </button>
               <button
                 disabled={submitting}
-                onClick={handleSubmit}
+                onClick={handleCompleteOrder}
                 style={{
                   flex: 2, background: 'linear-gradient(135deg, #10B981, #00D4FF)',
                   border: 'none', borderRadius: 10, padding: '13px', color: '#fff',
-                  fontWeight: 800, fontSize: '1rem', cursor: submitting ? 'not-allowed' : 'pointer',
+                  fontWeight: 800, fontSize: '0.95rem', cursor: submitting ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   boxShadow: '0 0 24px rgba(16,185,129,0.4)', opacity: submitting ? 0.7 : 1
                 }}
               >
-                {submitting ? 'Panel Kuruluyor...' : '🚀 Paneli Oluştur ve Giriş Yap'}
+                {submitting ? 'Panel Kuruluyor...' : '🚀 Ödemeyi Tamamla ve Paneli Başlat'}
               </button>
             </div>
           </div>
@@ -530,7 +661,7 @@ export default function Onboarding() {
 
       </div>
 
-      <div style={{ marginTop: 20, fontSize: '0.85rem', color: '#5A5A7A' }}>
+      <div style={{ marginTop: 18, fontSize: '0.85rem', color: '#5A5A7A' }}>
         Zaten bir hesabınız var mı? <Link to="/login" style={{ color: '#6C63FF', fontWeight: 600, textDecoration: 'none' }}>Giriş Yap</Link>
       </div>
 

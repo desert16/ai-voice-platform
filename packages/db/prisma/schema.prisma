@@ -20,12 +20,17 @@ model Tenant {
   email       String        @unique
   phone       String?
   address     String?
-  logoUrl     String?
-  sectorId    String?
-  serviceType ServiceType   @default(FULL_SUITE)
-  status      TenantStatus  @default(PENDING)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  sectorId       String?
+  serviceType    ServiceType   @default(FULL_SUITE)
+  hasPbx         Boolean       @default(true)
+  hasCallCenter  Boolean       @default(false)
+  hasAiAgent     Boolean       @default(false)
+  hasCrm         Boolean       @default(false)
+  maxExtensions  Int           @default(5)
+  status         TenantStatus  @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
 
   sector           Sector?              @relation(fields: [sectorId], references: [id])
   users            User[]
