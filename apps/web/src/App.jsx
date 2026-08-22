@@ -10,6 +10,9 @@ import Integrations from './pages/Integrations';
 import Calls from './pages/Calls';
 import ApiKeys from './pages/ApiKeys';
 import Settings from './pages/Settings';
+import Modules from './pages/Modules';
+import CRM from './pages/CRM';
+import Appointments from './pages/Appointments';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -26,6 +29,9 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="setup" element={<Setup />} />
         <Route path="agent" element={<Agent />} />
+        <Route path="crm" element={<CRM />} />
+        <Route path="appointments" element={<Appointments />} />
+        <Route path="modules" element={<Modules />} />
         <Route path="integrations" element={<Integrations />} />
         <Route path="calls" element={<Calls />} />
         <Route path="api-keys" element={<ApiKeys />} />
@@ -34,6 +40,7 @@ function AppRoutes() {
     </Routes>
   );
 }
+
 
 function App() {
   return (

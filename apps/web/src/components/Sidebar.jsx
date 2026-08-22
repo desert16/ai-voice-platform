@@ -4,18 +4,22 @@ import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Mic2, PhoneCall, Zap, Key,
   Settings, LogOut, ChevronLeft, ChevronRight,
-  Building2
+  Building2, Users, Calendar, Boxes
 } from 'lucide-react';
 
 const NAV = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/setup',        icon: Zap,             label: 'Hızlı Kurulum' },
   { to: '/agent',        icon: Mic2,            label: 'AI Ajan' },
+  { to: '/crm',          icon: Users,           label: 'CRM & Müşteriler' },
+  { to: '/appointments', icon: Calendar,        label: 'Randevular' },
+  { to: '/modules',      icon: Boxes,           label: 'Modüller' },
   { to: '/calls',        icon: PhoneCall,       label: 'Çağrılar' },
   { to: '/integrations', icon: Key,             label: 'Entegrasyonlar' },
   { to: '/api-keys',     icon: Key,             label: 'API Anahtarları' },
   { to: '/settings',     icon: Settings,        label: 'Ayarlar' },
 ];
+
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);

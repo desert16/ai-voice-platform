@@ -1,5 +1,699 @@
 // This is your Prisma schema file
-// Multi-Tenant AI Voice Platform
+// Multi-Tenant AI Contact Center — Modüler Mimari
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// TENANT (Müşteri Firması)
+// ============================================================
+model Tenant {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  email       String        @unique
+  phone       String?
+  address     String?
+  logoUrl     String?
+  sectorId    String?
+  status      TenantStatus  @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  sector           Sector?              @relation(fields: [sectorId], references: [id])
+  users            User[]
+  sipTrunks        SipTrunk[]
+  agents           Agent[]
+  calls            Call[]
+  customerApis     CustomerApi[]
+  apiKeys          ApiKey[]
+  tenantModules    TenantModule[]
+  subscription     TenantSubscription?
+  customers        Customer[]
+  appointments     Appointment[]
+  properties       Property[]
+  serviceTickets   ServiceTicket[]
+  reservations     Reservation[]
+  orders           Order[]
+
+  @@index([slug])
+  @@index([sectorId])
+}
+
+enum TenantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+// ============================================================
+// USER
+// ============================================================
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String
+  name         String
+  role         UserRole  @default(MEMBER)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ============================================================
+// SECTOR (Sektör — Admin panelinden yönetilir, kodda sabit değil)
+// ============================================================
+model Sector {
+  id          String   @id @default(cuid())
+  name        String   // "Sağlık & Klinik"
+  code        String   @unique // "health"
+  description String?
+  icon        String?  // emoji ya da icon key
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenants       Tenant[]
+  sectorModules SectorModule[]
+}
+
+// ============================================================
+// MODULE (Özellik/Modül Tanımı)
+// ============================================================
+model Module {
+  id          String       @id @default(cuid())
+  code        String       @unique  // "crm", "appointment", "property" vb.
+  name        String
+  description String?
+  icon        String?
+  category    String       @default("general") // "core", "sector", "integration"
+  isCore      Boolean      @default(false) // Her tenanta otomatik eklenen modüller
+  createdAt   DateTime     @default(now())
+
+  sectorModules SectorModule[]
+  tenantModules TenantModule[]
+  planFeatures  PlanFeature[]
+}
+
+// ============================================================
+// SECTOR_MODULE (Sektör ↔ Modül ilişkisi + varsayılan şablon)
+// ============================================================
+model SectorModule {
+  id        String  @id @default(cuid())
+  sectorId  String
+  moduleId  String
+  isDefault Boolean @default(true)  // Sektör seçilince otomatik aktif olsun mu?
+
+  sector Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorId, moduleId])
+}
+
+// ============================================================
+// TENANT_MODULE (Tenant'ın aktif modülleri)
+// ============================================================
+model TenantModule {
+  id          String   @id @default(cuid())
+  tenantId    String
+  moduleId    String
+  enabled     Boolean  @default(true)
+  settings    Json     @default("{}")
+  activatedAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, moduleId])
+  @@index([tenantId])
+}
+
+// ============================================================
+// PLAN (Abonelik Paketi)
+// ============================================================
+model Plan {
+  id              String   @id @default(cuid())
+  code            String   @unique  // "starter", "professional", "enterprise"
+  name            String
+  description     String?
+  priceMonthly    Float    @default(0)
+  maxExtensions   Int      @default(5)
+  maxDids         Int      @default(1)
+  maxAiMinutes    Int      @default(100)
+  maxAgents       Int      @default(1)
+  maxCallsPerDay  Int      @default(50)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  planFeatures  PlanFeature[]
+  subscriptions TenantSubscription[]
+}
+
+// ============================================================
+// PLAN_FEATURE (Paket ↔ Modül ilişkisi)
+// ============================================================
+model PlanFeature {
+  id         String  @id @default(cuid())
+  planId     String
+  moduleId   String
+  isIncluded Boolean @default(true)
+  limit      Int?    // Opsiyonel limit (örn. 100 SMS/ay)
+
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, moduleId])
+}
+
+// ============================================================
+// TENANT_SUBSCRIPTION (Abonelik)
+// ============================================================
+model TenantSubscription {
+  id         String             @id @default(cuid())
+  tenantId   String             @unique
+  planId     String
+  status     SubscriptionStatus @default(ACTIVE)
+  startsAt   DateTime           @default(now())
+  expiresAt  DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  TRIAL
+}
+
+// ============================================================
+// SIP TRUNK
+// ============================================================
+model SipTrunk {
+  id               String      @id @default(cuid())
+  tenantId         String
+  label            String
+  sipUsername      String
+  sipPassword      String
+  sipHost          String
+  sipPort          Int         @default(5060)
+  phoneNumber      String
+  status           TrunkStatus @default(INACTIVE)
+  lastRegisteredAt DateTime?
+  configFile       String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  calls  Call[]
+
+  @@index([tenantId])
+  @@index([phoneNumber])
+}
+
+enum TrunkStatus {
+  INACTIVE
+  REGISTERING
+  ACTIVE
+  FAILED
+}
+
+// ============================================================
+// AGENT (AI Sesli Ajan)
+// ============================================================
+model Agent {
+  id              String      @id @default(cuid())
+  tenantId        String
+  name            String
+  systemPrompt    String      @db.Text
+  voiceModel      String      @default("gemini-3.1-flash-live-preview")
+  language        String      @default("tr-TR")
+  welcomeMessage  String?     @db.Text
+  fallbackMessage String?     @db.Text
+  maxCallDuration Int         @default(300)
+  isDefault       Boolean     @default(false)
+  status          AgentStatus @default(DRAFT)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  versions AgentVersion[]
+  calls    Call[]
+
+  @@index([tenantId])
+}
+
+enum AgentStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+}
+
+// ============================================================
+// AGENT VERSION
+// ============================================================
+model AgentVersion {
+  id           String   @id @default(cuid())
+  agentId      String
+  systemPrompt String   @db.Text
+  changeNote   String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+}
+
+// ============================================================
+// CUSTOMER API (Webhook / Entegrasyon)
+// ============================================================
+model CustomerApi {
+  id              String     @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  endpoint        String
+  method          HttpMethod @default(GET)
+  headers         Json       @default("{}")
+  bodyTemplate    Json?
+  responseMapping Json?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+}
+
+// ============================================================
+// CALL (Çağrı Kaydı)
+// ============================================================
+model Call {
+  id           String        @id @default(cuid())
+  tenantId     String
+  agentId      String?
+  sipTrunkId   String?
+  customerId   String?
+  asteriskUuid String        @unique
+  callerNumber String?
+  calledNumber String?
+  direction    CallDirection @default(INBOUND)
+  status       CallStatus    @default(ACTIVE)
+  startedAt    DateTime      @default(now())
+  endedAt      DateTime?
+  duration     Int?
+  recordingPath String?
+  recordingUrl  String?
+  createdAt    DateTime      @default(now())
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  agent       Agent?       @relation(fields: [agentId], references: [id])
+  sipTrunk    SipTrunk?    @relation(fields: [sipTrunkId], references: [id])
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  transcripts Transcript[]
+
+  @@index([tenantId])
+  @@index([asteriskUuid])
+  @@index([tenantId, startedAt])
+  @@index([customerId])
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  ABANDONED
+}
+
+// ============================================================
+// TRANSCRIPT
+// ============================================================
+model Transcript {
+  id         String            @id @default(cuid())
+  callId     String
+  speaker    TranscriptSpeaker
+  text       String            @db.Text
+  timestamp  DateTime          @default(now())
+  durationMs Int?
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@index([callId, timestamp])
+}
+
+enum TranscriptSpeaker {
+  USER
+  AGENT
+  SYSTEM
+}
+
+// ============================================================
+// API KEY
+// ============================================================
+model ApiKey {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  keyHash     String    @unique
+  keyPrefix   String
+  permissions Json      @default("[\"calls:read\",\"transcripts:read\"]")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([keyHash])
+}
+
+// ============================================================
+// CUSTOMER (Ortak CRM Çekirdeği)
+// ============================================================
+model Customer {
+  id         String       @id @default(cuid())
+  tenantId   String
+  name       String
+  phone      String?
+  email      String?
+  type       CustomerType @default(INDIVIDUAL)
+  address    String?
+  tags       String[]     @default([])
+  source     String?      // "call", "web", "whatsapp", "manual"
+  metadata   Json         @default("{}")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts     Contact[]
+  notes        Note[]
+  activities   Activity[]
+  calls        Call[]
+  appointments Appointment[]
+  properties   Property[]
+  tickets      ServiceTicket[]
+  reservations Reservation[]
+  orders       Order[]
+
+  @@index([tenantId])
+  @@index([tenantId, phone])
+  @@index([tenantId, email])
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  CORPORATE
+}
+
+// ============================================================
+// CONTACT (Müşteri İrtibat Kişisi)
+// ============================================================
+model Contact {
+  id         String   @id @default(cuid())
+  customerId String
+  name       String
+  phone      String?
+  email      String?
+  role       String?  // "Karar Verici", "Muhasebe" vb.
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+// ============================================================
+// NOTE (Müşteri Notu)
+// ============================================================
+model Note {
+  id         String   @id @default(cuid())
+  tenantId   String
+  customerId String
+  text       String   @db.Text
+  createdBy  String?  // userId
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([tenantId])
+}
+
+// ============================================================
+// ACTIVITY (Müşteri Aktivite Akışı)
+// ============================================================
+model Activity {
+  id          String   @id @default(cuid())
+  tenantId    String
+  customerId  String
+  type        String   // "call", "note", "appointment", "ticket", "order"
+  description String
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([tenantId, createdAt])
+}
+
+// ============================================================
+// APPOINTMENT (Randevu — Tüm sektörler için ortak motor)
+// ============================================================
+model Appointment {
+  id             String            @id @default(cuid())
+  tenantId       String
+  customerId     String?
+  title          String
+  type           String            @default("general") // "medical", "property_viewing", "service" vb.
+  staffName      String?
+  location       String?
+  notes          String?           @db.Text
+  status         AppointmentStatus @default(PENDING)
+  scheduledAt    DateTime
+  durationMinutes Int              @default(30)
+  reminderSentAt DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, scheduledAt])
+  @@index([customerId])
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================================
+// PROPERTY (Emlak Modülü)
+// ============================================================
+model Property {
+  id          String         @id @default(cuid())
+  tenantId    String
+  customerId  String?        // İlan sahibi müşteri
+  title       String
+  type        PropertyType   @default(APARTMENT)
+  status      PropertyStatus @default(ACTIVE)
+  price       Float?
+  currency    String         @default("TRY")
+  city        String?
+  district    String?
+  address     String?
+  area        Float?         // m²
+  rooms       String?        // "3+1"
+  floor       Int?
+  totalFloors Int?
+  features    Json           @default("[]")  // ["Asansör", "Otopark"]
+  images      Json           @default("[]")  // URL listesi
+  description String?        @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  OFFICE
+  LAND
+  SHOP
+  OTHER
+}
+
+enum PropertyStatus {
+  ACTIVE
+  SOLD
+  RENTED
+  PASSIVE
+}
+
+// ============================================================
+// SERVICE_TICKET (Teknik Servis Modülü)
+// ============================================================
+model ServiceTicket {
+  id          String        @id @default(cuid())
+  tenantId    String
+  customerId  String?
+  ticketNo    String        @unique  // "SRV-2024-0001"
+  subject     String
+  description String?       @db.Text
+  deviceInfo  String?       // Cihaz bilgisi
+  status      TicketStatus  @default(OPEN)
+  priority    TicketPriority @default(NORMAL)
+  assignedTo  String?       // Teknisyen adı/id
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([customerId])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_PARTS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ============================================================
+// RESERVATION (Restoran / Otel Modülü)
+// ============================================================
+model Reservation {
+  id           String            @id @default(cuid())
+  tenantId     String
+  customerId   String?
+  guestName    String
+  guestPhone   String?
+  guestCount   Int               @default(1)
+  tableNo      String?
+  roomNo       String?
+  type         String            @default("restaurant") // "restaurant", "hotel"
+  status       ReservationStatus @default(PENDING)
+  scheduledAt  DateTime
+  notes        String?           @db.Text
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, scheduledAt])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================================
+// ORDER (E-ticaret / Restoran Siparişleri)
+// ============================================================
+model Order {
+  id          String      @id @default(cuid())
+  tenantId    String
+  customerId  String?
+  orderNo     String      @unique   // "ORD-2024-0001"
+  type        String      @default("ecommerce") // "ecommerce", "restaurant"
+  status      OrderStatus @default(PENDING)
+  items       Json        @default("[]")   // [{name, qty, price}]
+  totalAmount Float       @default(0)
+  currency    String      @default("TRY")
+  notes       String?
+  shippingInfo Json?      // Kargo bilgileri
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([customerId])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
 
 generator client {
   provider = "prisma-client-js"

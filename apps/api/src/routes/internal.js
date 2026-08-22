@@ -56,6 +56,24 @@ router.get('/tenants/:tenantId/agent-config', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
+// GET /api/internal/tenants/:tenantId/ai-context
+// Bridge için tenant'ın tam AI context'ini döner (systemPrompt + tools + modules)
+// ──────────────────────────────────────────────
+router.get('/tenants/:tenantId/ai-context', async (req, res) => {
+  const { tenantId } = req.params;
+  try {
+    const { buildAiContext } = require('../ai/contextBuilder');
+    const context = await buildAiContext(tenantId);
+    res.json(context);
+  } catch (err) {
+    console.error('[INTERNAL] ai-context hatası:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+// ──────────────────────────────────────────────
 // PATCH /api/internal/trunks/:tenantId/status
 // Trunk durumunu güncelle (REGISTERING / INACTIVE / ACTIVE)
 // Body: { sipUsername?, status }
