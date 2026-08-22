@@ -22,6 +22,7 @@ model Tenant {
   address     String?
   logoUrl     String?
   sectorId    String?
+  serviceType ServiceType   @default(FULL_SUITE)
   status      TenantStatus  @default(PENDING)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -41,9 +42,16 @@ model Tenant {
   serviceTickets   ServiceTicket[]
   reservations     Reservation[]
   orders           Order[]
+  sectorRecords    SectorRecord[]
 
   @@index([slug])
   @@index([sectorId])
+}
+
+enum ServiceType {
+  PBX_ONLY       // Sadece Bulut Santral
+  AI_AGENT_ONLY  // Sadece AI Sesli Asistan
+  FULL_SUITE     // Santral + AI + Sektörel CRM
 }
 
 enum TenantStatus {
@@ -52,6 +60,7 @@ enum TenantStatus {
   SUSPENDED
   CANCELLED
 }
+
 
 // ============================================================
 // USER
@@ -341,11 +350,12 @@ model Call {
   recordingUrl  String?
   createdAt    DateTime      @default(now())
 
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  agent       Agent?       @relation(fields: [agentId], references: [id])
-  sipTrunk    SipTrunk?    @relation(fields: [sipTrunkId], references: [id])
-  customer    Customer?    @relation(fields: [customerId], references: [id])
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
+  agent       Agent?         @relation(fields: [agentId], references: [id])
+  sipTrunk    SipTrunk?      @relation(fields: [sipTrunkId], references: [id])
+  customer    Customer?      @relation(fields: [customerId], references: [id])
   transcripts Transcript[]
+  sectorRecords SectorRecord[]
 
   @@index([tenantId])
   @@index([asteriskUuid])
@@ -426,16 +436,18 @@ model Customer {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contacts     Contact[]
-  notes        Note[]
-  activities   Activity[]
-  calls        Call[]
-  appointments Appointment[]
-  properties   Property[]
-  tickets      ServiceTicket[]
-  reservations Reservation[]
-  orders       Order[]
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts      Contact[]
+  notes         Note[]
+  activities    Activity[]
+  calls         Call[]
+  appointments  Appointment[]
+  properties    Property[]
+  tickets       ServiceTicket[]
+  reservations  Reservation[]
+  orders        Order[]
+  sectorRecords SectorRecord[]
+
 
   @@index([tenantId])
   @@index([tenantId, phone])
@@ -693,4 +705,40 @@ enum OrderStatus {
   CANCELLED
   REFUNDED
 }
+
+// ============================================================
+// SECTOR_RECORD (AI'ın Görüşmede Topladığı Canlı Sektörel Veriler)
+// ============================================================
+model SectorRecord {
+  id            String             @id @default(cuid())
+  tenantId      String
+  callId        String?
+  customerId    String?
+  sectorCode    String             // "health", "real_estate", "restaurant", etc.
+  title         String             // e.g. "Diş Muayenesi Talebi - Ahmet Y."
+  callerNumber  String?
+  callerName    String?
+  status        SectorRecordStatus @default(NEW)
+  extractedData Json               @default("{}") // AI'ın çıkardığı yapılandırılmış JSON verisi
+  notes         String?            @db.Text
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  call     Call?     @relation(fields: [callId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, sectorCode])
+  @@index([tenantId, status])
+}
+
+enum SectorRecordStatus {
+  NEW
+  CONTACTED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
 

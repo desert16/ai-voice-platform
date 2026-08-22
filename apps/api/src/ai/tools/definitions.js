@@ -7,6 +7,29 @@
 // definition: Gemini/OpenAI function calling formatı
 
 const ALL_TOOLS = [
+  // ── CORE / AI RECORDING ─────────────────────────────────
+  {
+    code: 'save_sector_record',
+    module: 'ai_voice',
+    description: 'Görüşmede arayan müşteriden alınan sektörel bilgileri ve talebi canlı tabloya kaydeder',
+    definition: {
+      name: 'save_sector_record',
+      description: 'Arayan müşterinin adını, talebini ve sektöre özel bilgileri (şikayet, arıza, randevu saati, bütçe, sipariş vb.) sisteme kaydeder.',
+      parameters: {
+        type: 'object',
+        properties: {
+          title:       { type: 'string', description: 'Kayıt başlığı / özeti (Örn: Diş Randevusu Talebi - Mehmet B.)' },
+          callerName:  { type: 'string', description: 'Arayan kişinin adı soyadı' },
+          callerPhone: { type: 'string', description: 'Arayan kişinin telefon numarası (varsa)' },
+          details:     { type: 'string', description: 'Görüşmenin detaylı notu ve talebi' },
+          urgency:     { type: 'string', enum: ['NORMAL', 'YUKSEK', 'ACIL'], description: 'Talebin aciliyet derecesi' },
+          sectorData:  { type: 'object', description: 'Sektöre özel toplanan alanlar (JSON formatında)' },
+        },
+        required: ['title', 'details'],
+      },
+    },
+  },
+
   // ── CORE / CRM ──────────────────────────────────────────
   {
     code: 'search_customer',

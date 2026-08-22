@@ -1,33 +1,65 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Mic2, PhoneCall, Zap, Key,
   Settings, LogOut, ChevronLeft, ChevronRight,
-  Building2, Users, Calendar, Boxes
+  Building2, Users, Calendar, Boxes, Table, Sparkles, PlusCircle
 } from 'lucide-react';
-
-const NAV = [
-  { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/setup',        icon: Zap,             label: 'Hızlı Kurulum' },
-  { to: '/agent',        icon: Mic2,            label: 'AI Ajan' },
-  { to: '/crm',          icon: Users,           label: 'CRM & Müşteriler' },
-  { to: '/appointments', icon: Calendar,        label: 'Randevular' },
-  { to: '/modules',      icon: Boxes,           label: 'Modüller' },
-  { to: '/calls',        icon: PhoneCall,       label: 'Çağrılar' },
-  { to: '/integrations', icon: Key,             label: 'Entegrasyonlar' },
-  { to: '/api-keys',     icon: Key,             label: 'API Anahtarları' },
-  { to: '/settings',     icon: Settings,        label: 'Ayarlar' },
-];
-
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, tenant, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const w = collapsed ? '64px' : '240px';
+
+  // Slug desteği
+  const slugPrefix = params.tenantSlug ? `/${params.tenantSlug}` : '';
+  const serviceType = tenant?.serviceType || 'FULL_SUITE';
+
+  // Servis Tipine Göre Menü Filtreleme
+  let navItems = [];
+
+  if (serviceType === 'PBX_ONLY') {
+    // ☎️ SADECE SANTRAL MÜŞTERİSİ
+    navItems = [
+      { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
+      { to: `${slugPrefix}/setup`,        icon: Zap,             label: 'Santral & Dahililer' },
+      { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Çağrı Kayıtları' },
+      { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Entegrasyonlar' },
+      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Santral Ayarları' },
+    ];
+  } else if (serviceType === 'AI_AGENT_ONLY') {
+    // 🤖 SADECE AI SESLİ AJAN
+    navItems = [
+      { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
+      { to: `${slugPrefix}/agent`,        icon: Mic2,            label: 'AI Ajan Studio' },
+      { to: `${slugPrefix}/records`,      icon: Table,           label: 'Canlı Çağrı Tablosu' },
+      { to: `${slugPrefix}/crm`,          icon: Users,           label: 'Müşteriler & Notlar' },
+      { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Canlı Ses & Transkript' },
+      { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Santral Bağlantısı' },
+      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
+    ];
+  } else {
+    // ⭐ TAM PAKET (FULL SUITE)
+    navItems = [
+      { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
+      { to: `${slugPrefix}/setup`,        icon: Zap,             label: 'Santral Hatları' },
+      { to: `${slugPrefix}/agent`,        icon: Mic2,            label: 'AI Ajan Studio' },
+      { to: `${slugPrefix}/records`,      icon: Table,           label: 'Canlı Sektör Tablosu' },
+      { to: `${slugPrefix}/crm`,          icon: Users,           label: 'CRM & Müşteriler' },
+      { to: `${slugPrefix}/appointments`, icon: Calendar,        label: 'Randevular' },
+      { to: `${slugPrefix}/modules`,      icon: Boxes,           label: 'Modül Yönetimi' },
+      { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Çağrı Geçmişi' },
+      { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Entegrasyonlar' },
+      { to: `${slugPrefix}/api-keys`,     icon: Key,             label: 'API Anahtarları' },
+      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
+    ];
+  }
 
   return (
     <aside style={{
@@ -80,15 +112,20 @@ export default function Sidebar() {
           borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <Building2 size={13} color="#6C63FF" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '0.75rem', color: '#A8A8C0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {tenant.name || 'Demo Firma'}
-          </span>
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {tenant.name || 'Firma'}
+            </div>
+            <div style={{ fontSize: '0.65rem', color: '#00D4FF' }}>
+              {serviceType === 'PBX_ONLY' ? '☎️ Bulut Santral' : serviceType === 'AI_AGENT_ONLY' ? '🤖 AI Sesli Ajan' : '⭐ Tam Paket'}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto', overflowX: 'hidden' }}>
-        {NAV.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink key={to} to={to} style={({ isActive }) => ({
             display: 'flex', alignItems: 'center', gap: 10,
             padding: collapsed ? '10px' : '9px 12px',
@@ -105,7 +142,32 @@ export default function Sidebar() {
             {!collapsed && <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{label}</span>}
           </NavLink>
         ))}
+
+        {/* Sadece Santral Müşterisine AI Ekleme Kartı */}
+        {!collapsed && serviceType === 'PBX_ONLY' && (
+          <div style={{
+            margin: '16px 4px 8px', padding: '12px',
+            background: 'linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,255,0.1))',
+            border: '1px solid rgba(108,99,255,0.3)', borderRadius: 10,
+            textAlign: 'center'
+          }}>
+            <Sparkles size={16} color="#00D4FF" style={{ marginBottom: 4 }} />
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff', marginBottom: 2 }}>Yapay Zeka Asistanı</div>
+            <div style={{ fontSize: '0.65rem', color: '#A8A8C0', marginBottom: 8 }}>Gelen çağrıları otomatik karşılasın.</div>
+            <button
+              onClick={() => navigate(`${slugPrefix}/integrations`)}
+              style={{
+                width: '100%', background: 'linear-gradient(135deg, #6C63FF, #00D4FF)',
+                border: 'none', borderRadius: 6, padding: '5px', color: '#fff',
+                fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer'
+              }}
+            >
+              + AI Asistan Ekle
+            </button>
+          </div>
+        )}
       </nav>
+
 
       {/* User + Logout */}
       <div style={{ padding: '10px 8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>

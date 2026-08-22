@@ -23,6 +23,7 @@ const crmRoutes          = require('./routes/crm');
 const appointmentRoutes  = require('./routes/appointments');
 const propertyRoutes     = require('./routes/properties');
 const serviceTicketRoutes = require('./routes/serviceTickets');
+const sectorRecordRoutes = require('./routes/sectorRecords');
 
 // ─── Core Middleware ────────────────────────────────────────
 const { tenantGuard }    = require('./core/tenantGuard');
@@ -62,11 +63,13 @@ app.use('/api/tenants/:tenantId/calls',    callRoutes);
 app.use('/api/tenants/:tenantId/keys',     apiKeyRoutes);
 
 // ─── Tenant-scoped — Yeni Modüler Routes ───────────────────
-app.use('/api/tenants/:tenantId/modules',      tenantGuard, moduleRoutes);
-app.use('/api/tenants/:tenantId/crm',          tenantGuard, crmRoutes);
-app.use('/api/tenants/:tenantId/appointments', tenantGuard, appointmentRoutes);
-app.use('/api/tenants/:tenantId/properties',   tenantGuard, propertyRoutes);
-app.use('/api/tenants/:tenantId/tickets',      tenantGuard, serviceTicketRoutes);
+app.use('/api/tenants/:tenantId/modules',        tenantGuard, moduleRoutes);
+app.use('/api/tenants/:tenantId/crm',            tenantGuard, crmRoutes);
+app.use('/api/tenants/:tenantId/appointments',   tenantGuard, appointmentRoutes);
+app.use('/api/tenants/:tenantId/properties',     tenantGuard, propertyRoutes);
+app.use('/api/tenants/:tenantId/tickets',        tenantGuard, serviceTicketRoutes);
+app.use('/api/tenants/:tenantId/sector-records', tenantGuard, sectorRecordRoutes);
+
 
 // ─── Public API (API Key ile) ───────────────────────────────
 app.use('/v1', publicApiRoutes);
