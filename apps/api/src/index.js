@@ -24,6 +24,7 @@ const appointmentRoutes  = require('./routes/appointments');
 const propertyRoutes     = require('./routes/properties');
 const serviceTicketRoutes = require('./routes/serviceTickets');
 const sectorRecordRoutes = require('./routes/sectorRecords');
+const pbxConfigRoutes    = require('./routes/pbxConfig');
 
 // ─── Core Middleware ────────────────────────────────────────
 const { tenantGuard }    = require('./core/tenantGuard');
@@ -69,6 +70,8 @@ app.use('/api/tenants/:tenantId/appointments',   tenantGuard, appointmentRoutes)
 app.use('/api/tenants/:tenantId/properties',     tenantGuard, propertyRoutes);
 app.use('/api/tenants/:tenantId/tickets',        tenantGuard, serviceTicketRoutes);
 app.use('/api/tenants/:tenantId/sector-records', tenantGuard, sectorRecordRoutes);
+app.use('/api/tenants/:tenantId/pbx',            tenantGuard, pbxConfigRoutes);
+
 
 
 // ─── Public API (API Key ile) ───────────────────────────────

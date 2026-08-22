@@ -4,7 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Mic2, PhoneCall, Zap, Key,
   Settings, LogOut, ChevronLeft, ChevronRight,
-  Building2, Users, Calendar, Boxes, Table, Sparkles, PlusCircle
+  Building2, Users, Calendar, Boxes, Table, Sparkles, PlusCircle,
+  Clock, BarChart3, Sliders
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -29,9 +30,11 @@ export default function Sidebar() {
     navItems = [
       { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
       { to: `${slugPrefix}/setup`,        icon: Zap,             label: 'Santral & Dahililer' },
+      { to: `${slugPrefix}/pbx-routing`,  icon: Sliders,         label: 'Gelen Arama & IVR' },
+      { to: `${slugPrefix}/reports`,      icon: BarChart3,       label: 'Çağrı Raporları' },
       { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Çağrı Kayıtları' },
       { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Entegrasyonlar' },
-      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Santral Ayarları' },
+      { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
     ];
   } else if (serviceType === 'AI_AGENT_ONLY') {
     // 🤖 SADECE AI SESLİ AJAN
@@ -40,6 +43,7 @@ export default function Sidebar() {
       { to: `${slugPrefix}/agent`,        icon: Mic2,            label: 'AI Ajan Studio' },
       { to: `${slugPrefix}/records`,      icon: Table,           label: 'Canlı Çağrı Tablosu' },
       { to: `${slugPrefix}/crm`,          icon: Users,           label: 'Müşteriler & Notlar' },
+      { to: `${slugPrefix}/reports`,      icon: BarChart3,       label: 'AI & Çağrı Raporu' },
       { to: `${slugPrefix}/calls`,        icon: PhoneCall,       label: 'Canlı Ses & Transkript' },
       { to: `${slugPrefix}/integrations`, icon: Key,             label: 'Santral Bağlantısı' },
       { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
@@ -50,7 +54,9 @@ export default function Sidebar() {
       { to: `${slugPrefix}/dashboard`,    icon: LayoutDashboard, label: 'Dashboard' },
       { to: `${slugPrefix}/setup`,        icon: Zap,             label: 'Santral Hatları' },
       { to: `${slugPrefix}/agent`,        icon: Mic2,            label: 'AI Ajan Studio' },
+      { to: `${slugPrefix}/pbx-routing`,  icon: Sliders,         label: 'Gelen Arama & IVR' },
       { to: `${slugPrefix}/records`,      icon: Table,           label: 'Canlı Sektör Tablosu' },
+      { to: `${slugPrefix}/reports`,      icon: BarChart3,       label: 'Çağrı Raporları' },
       { to: `${slugPrefix}/crm`,          icon: Users,           label: 'CRM & Müşteriler' },
       { to: `${slugPrefix}/appointments`, icon: Calendar,        label: 'Randevular' },
       { to: `${slugPrefix}/modules`,      icon: Boxes,           label: 'Modül Yönetimi' },
@@ -60,6 +66,7 @@ export default function Sidebar() {
       { to: `${slugPrefix}/settings`,     icon: Settings,        label: 'Ayarlar' },
     ];
   }
+
 
   return (
     <aside style={{

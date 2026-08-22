@@ -15,6 +15,8 @@ import CRM from './pages/CRM';
 import Appointments from './pages/Appointments';
 import SectorRecords from './pages/SectorRecords';
 import Onboarding from './pages/Onboarding';
+import PbxSettings from './pages/PbxSettings';
+import Reports from './pages/Reports';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -36,6 +38,8 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="setup" element={<Setup />} />
         <Route path="agent" element={<Agent />} />
+        <Route path="pbx-routing" element={<PbxSettings />} />
+        <Route path="reports" element={<Reports />} />
         <Route path="records" element={<SectorRecords />} />
         <Route path="crm" element={<CRM />} />
         <Route path="appointments" element={<Appointments />} />
@@ -51,6 +55,7 @@ function AppRoutes() {
     </Routes>
   );
 }
+
 
 function App() {
 

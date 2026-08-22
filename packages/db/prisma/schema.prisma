@@ -43,6 +43,7 @@ model Tenant {
   reservations     Reservation[]
   orders           Order[]
   sectorRecords    SectorRecord[]
+  pbxConfig        PbxConfig?
 
   @@index([slug])
   @@index([sectorId])
@@ -53,6 +54,7 @@ enum ServiceType {
   AI_AGENT_ONLY  // Sadece AI Sesli Asistan
   FULL_SUITE     // Santral + AI + Sektörel CRM
 }
+
 
 enum TenantStatus {
   PENDING
@@ -343,12 +345,15 @@ model Call {
   calledNumber String?
   direction    CallDirection @default(INBOUND)
   status       CallStatus    @default(ACTIVE)
+  ivrSelection String?       // Tuşlanan rakam örn: "1", "2", "3", "0"
+  destinationExtension String? // Aktarılan dahili örn: "1001"
   startedAt    DateTime      @default(now())
   endedAt      DateTime?
   duration     Int?
   recordingPath String?
   recordingUrl  String?
   createdAt    DateTime      @default(now())
+
 
   tenant      Tenant         @relation(fields: [tenantId], references: [id])
   agent       Agent?         @relation(fields: [agentId], references: [id])
@@ -740,5 +745,32 @@ enum SectorRecordStatus {
   COMPLETED
   CANCELLED
 }
+
+// ============================================================
+// PBX_CONFIG (Santral Mesai, IVR & Tuşlama Ayarları)
+// ============================================================
+model PbxConfig {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  workDays         String[] @default(["mon", "tue", "wed", "thu", "fri"])
+  workStartHour    String   @default("09:00")
+  workEndHour      String   @default("18:00")
+  dayAction        String   @default("IVR")       // "IVR", "RING_ALL", "EXTENSION", "AI_AGENT"
+  dayTarget        String?  // Extension or Queue name (örn: "1001")
+  nightAction      String   @default("PLAYBACK")  // "PLAYBACK", "VOICEMAIL", "FORWARD_PHONE", "AI_AGENT"
+  nightTarget      String?  // Forward phone (örn: "0532XXXXXXX") or prompt
+  ivrWelcomeText   String?  @db.Text
+  ivrWelcomeAudio  String?  // Audio file URL/path
+  ivrOptions       Json     @default("[{\"digit\":\"1\",\"label\":\"Satış & Bilgi\",\"action\":\"EXTENSION\",\"target\":\"1001\"},{\"digit\":\"2\",\"label\":\"Teknik Destek\",\"action\":\"EXTENSION\",\"target\":\"1002\"}]")
+  ivrTimeoutAction String   @default("EXTENSION")
+  ivrTimeoutTarget String   @default("1001")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
 
 
